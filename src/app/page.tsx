@@ -1,107 +1,72 @@
-import { agentAssignments, documents } from "@/lib/agent-model";
+import Image from "next/image";
+import { redirect } from "next/navigation";
+import { LoginForm } from "@/components/login-form";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-const overview = [
-  { label: "Dokumente gesamt", value: "2.486", delta: "+12.4%" },
-  { label: "Verarbeitet heute", value: "184", delta: "+8.1%" },
-  { label: "Automatisch zugewiesen", value: "91%", delta: "+4.7%" },
-  { label: "Freigaben offen", value: "17", delta: "-3" },
-];
-
-export default function Home() {
+export default async function Home() {
+  const supabase = await createServerSupabase();
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user && !user.is_anonymous) redirect("/bereich");
+  }
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
-      <header className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-600">Astra</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Dokumentenablage & Agent Workflow</h1>
-        </div>
-        <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300 transition hover:bg-slate-800">
-          + Neues Dokument
-        </button>
+    <main className="access-page">
+      <header className="access-header">
+        <span className="wordmark">VELMORA</span>
+        <span className="access-label">
+          <span className="status-dot" /> Persönlicher Zugang
+        </span>
       </header>
-
-      <section className="grid gap-4 md:grid-cols-4">
-        {overview.map((item) => (
-          <div key={item.label} className="glass rounded-2xl p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{item.label}</p>
-            <div className="mt-4 flex items-end justify-between">
-              <span className="text-3xl font-bold text-slate-900">{item.value}</span>
-              <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">{item.delta}</span>
-            </div>
+      <div className="access-layout">
+        <section className="brand-stage" aria-label="VELMORA">
+          <div className="brand-orbit" aria-hidden="true" />
+          <Image
+            className="primary-logo"
+            src="/brand/velmora-primary.png"
+            alt="VELMORA – goldenes Emblem mit roségoldenen Facetten"
+            width={1280}
+            height={1280}
+            sizes="(max-width: 760px) 260px, 480px"
+            priority
+          />
+          <div className="brand-message">
+            <span className="eyebrow">Raum für das Wesentliche</span>
+            <h1>
+              Alles Wichtige.
+              <br />
+              <em>An einem Ort.</em>
+            </h1>
+            <p>
+              Mehr Überblick. Mehr Ruhe.
+              <br />
+              Ein persönlicher Bereich, der verbindet.
+            </p>
           </div>
-        ))}
-      </section>
-
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="glass rounded-3xl p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Aktuelle Dokumenten-Queue</h2>
-            <button className="text-sm font-medium text-sky-700">Alle anzeigen</button>
+        </section>
+        <section className="access-card" aria-labelledby="login-heading">
+          <span className="card-symbol" aria-hidden="true">
+            ⌑
+          </span>
+          <p className="eyebrow">Willkommen bei VELMORA</p>
+          <h2 id="login-heading">Ihr persönlicher Bereich</h2>
+          <p className="muted">Melden Sie sich an und kommen Sie an.</p>
+          <LoginForm configured={Boolean(supabase)} />
+          <div className="access-note">
+            <span aria-hidden="true">◇</span>
+            <p>
+              Ein Zugang, der Ihnen gehört.
+              <br />
+              <span>Nur für eingeladene Mitglieder.</span>
+            </p>
           </div>
-
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Dokument</th>
-                  <th className="px-4 py-3 font-medium">Besitzer</th>
-                  <th className="px-4 py-3 font-medium">Akte</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((doc) => (
-                  <tr key={doc.id} className="border-t border-slate-200">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-800">{doc.title}</div>
-                      <div className="text-xs text-slate-500">{doc.id} · {doc.source}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{doc.owner}</td>
-                    <td className="px-4 py-3 text-slate-600">{doc.folder}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-700">
-                        {doc.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <aside className="space-y-6">
-          <div className="glass rounded-3xl p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Agenten-Automatik</h2>
-            <div className="mt-5 space-y-4">
-              {agentAssignments.map((agent) => (
-                <div key={agent.id} className="rounded-2xl border border-slate-200 bg-white/70 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-slate-800">{agent.name}</p>
-                      <p className="text-xs text-slate-500">{agent.queue}</p>
-                    </div>
-                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-                      {agent.confidence}%
-                    </span>
-                  </div>
-                  <p className="mt-3 text-xs text-slate-500">Trigger: {agent.trigger}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass rounded-3xl p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Workflow-Logik</h2>
-            <ol className="mt-5 space-y-3 text-sm text-slate-600">
-              <li>1. Dokument anlegen oder importieren</li>
-              <li>2. Inhalt erkennen und klassifizieren</li>
-              <li>3. Richtiger Agent entsprechend Akte und Reihenfolge zuweisen</li>
-              <li>4. Freigabe, Archive und Weiterleitung automatisch dokumentieren</li>
-            </ol>
-          </div>
-        </aside>
-      </section>
+        </section>
+      </div>
+      <footer className="access-footer">
+        <span>VELMORA · Mit Raum für Sie.</span>
+        <span>Diskret. Persönlich. Verbunden.</span>
+      </footer>
     </main>
   );
 }

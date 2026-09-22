@@ -8,3 +8,8 @@ npm-debug.log*
 .env.local
 .env.production
 .env.development
+.env.*
+!.env.example
+*.tsbuildinfo
+/artifacts/
+/private-handoff/

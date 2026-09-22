@@ -1,13 +1,14 @@
 {
-  "name": "astera",
+  "name": "velmora",
   "version": "0.1.0",
   "private": true,
-  "description": "Astra — Dokumentenablage und Agenten-Workflow für strukturierte Akten und Automationen.",
+  "description": "VELMORA \u2013 Ihr pers\u00f6nlicher Bereich. Alles Wichtige an einem Ort.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "documents",
@@ -18,18 +19,26 @@
   "author": "Dominik",
   "license": "ISC",
   "dependencies": {
-    "next": "^15.5.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.116.0",
+    "next": "15.5.25",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.6.2",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.0",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5.8.3"
+    "@eslint/eslintrc": "3.3.7",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "15.5.25",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.8.3"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.28"
+    }
   }
 }
