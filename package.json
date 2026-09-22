@@ -2,13 +2,14 @@
   "name": "velmora",
   "version": "0.1.0",
   "private": true,
-  "description": "VELMORA \u2013 Ihr pers\u00f6nlicher Bereich. Alles Wichtige an einem Ort.",
+  "description": "VELMORA – Ihr persönlicher Bereich. Alles Wichtige an einem Ort.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "keywords": [
     "documents",
@@ -22,8 +23,10 @@
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.116.0",
     "next": "15.5.25",
+    "pdf-lib": "1.17.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
@@ -34,6 +37,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.25",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
     "typescript": "5.8.3"
   },
   "overrides": {

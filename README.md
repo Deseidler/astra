@@ -1,45 +1,40 @@
 # VELMORA
 
-Ein persönlicher Bereich in Obsidian, Champagnergold und Roségold. Umsetzung der freigegebenen Markenrichtung aus der Übergabe vom 22.09.2026.
+Privater Familienbereich für Stammdaten, Unterlagen, Aufgaben und Schreiben in Schwarz, Gold und Rosé.
 
 ## Entwicklung
 
 ```bash
 npm ci
 cp .env.example .env.local
-# Supabase-URL und Publishable Key (alternativ Anon Key) eintragen.
+# Supabase-URL und Publishable Key eintragen
 npm run dev
 ```
 
-Vorhandene `.env.local` nicht überschreiben. Die App braucht keinen Service-Role-Schlüssel. Anmeldung mit einem bestehenden Supabase-Konto; keine öffentliche Registrierung. In Supabase muss die Selbstregistrierung für einen Betrieb ausschließlich mit Einladungen deaktiviert sein.
+Vorhandene Umgebungsdateien nicht überschreiben. Die Anwendung benötigt keinen Service-Role-Schlüssel. Anmeldung mit bestehendem Supabase-Konto; für Betrieb nur mit Einladungen die Selbstregistrierung in Supabase deaktivieren.
 
-## Aktueller Umfang
+## Funktionen
 
-- Neutrale, responsive VELMORA-Anmeldung mit dem unveränderten ausgewählten Logo.
-- Passwortanmeldung und Abmeldung über Supabase, Cookies und serverseitige Benutzerprüfung.
-- `/bereich`: Übersicht, eigene Einträge und Kontoinformationen. Familienprofile, Zeitverlauf, Aufgaben und gemeinsame Anliegen sind ausdrücklich als vorbereitet gekennzeichnet.
-- Echte Zähler und leere Zustände; kein Rückfall auf Beispieldaten bei Fehlern.
-- RLS-Migration: Zugriff ausschließlich auf `owner_id = auth.uid()`, keine anonymen Lese- oder Schreibrechte. Bestehende Einträge ohne `owner_id` bleiben erhalten und unsichtbar. Keine automatische Zuordnung anhand eines Namens.
-- Das bisherige Workflow-Komponentenexperiment bleibt im Quellcode erhalten, ist aber nicht in die Anwendung eingebunden. Seine Regeln und Prozentwerte sind keine freigegebene Klassifizierung.
+- Persönliche Profile mit eigenen Themenkacheln, Dropdown-Zuordnung und zusätzlichen Stammdatenfeldern.
+- Private PDF-/Bildoriginale, Duplikaterkennung und Datumssortierung.
+- Akten, Aufgaben und Fristen.
+- Briefe mit persönlichem Briefkopf als A4-PDF; E-Mail-Entwürfe und `.eml`-Export nach Freigabe.
+- Eigentümerbezogene Zugriffsregeln, Änderungsverlauf und Schutz gegen veraltete Speicherstände.
 
-## Datenbank
+KI-Erkennung, Postfachsynchronisierung und direkter Mailversand sind noch nicht angeschlossen. Familienprofile sind persönliche Akten und keine separaten Benutzerzugänge. Siehe [Umsetzungsstand und Betriebsgrenzen](docs/handoff-status.md).
 
-Die Sicherheitsmigration muss vor der Verwendung mit echten Daten auf der Zielumgebung angewendet werden. Eine Login-Seite ersetzt keine Datenbankberechtigungen.
+## Datenbank und Tests
+
+Alle Migrationen unter `supabase/migrations` anwenden. Die neue Originalablage ist privat. Browser-Schreibrechte gelten nur für eigene Workspace-Einträge; die älteren Tabellen bleiben für Browser schreibgeschützt.
 
 ```bash
 supabase migration up --local
-# Lokale RLS-Regressionstests; alle Testdatensätze werden zurückgerollt:
-docker exec -i supabase_db_astera psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/private_access.sql
-```
-
-Die Migration erweitert die beiden vorhandenen Tabellen um `owner_id` und entfernt die offenen Policies. `authenticated` erhält nur SELECT. Administrativ zugewiesene Datensätze sind sichtbar; Import und Änderungen benötigen zuerst ein freigegebenes Rechte- und Auditmodell. Originalmigration und bestehende Seed-Daten bleiben erhalten.
-
-## Prüfungen
-
-```bash
 npm run lint
 npm run typecheck
+node --import tsx --test tests/workspace.test.ts
 npm run build
+# SQL-Regressionsprüfungen in zurückgerollten Transaktionen:
+docker exec -i supabase_db_astera psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/workspace_access.sql
 ```
 
-Details zum Umsetzungsstand und zu den noch offenen Abläufen: [Übergabe-Status](docs/handoff-status.md).
+Private Familienimporte und Originaldokumente gehören nicht in das Repository. Für Tests ausschließlich synthetische Daten verwenden. Das ältere Workflow-Experiment bleibt ungenutzt im Quellcode und ist keine produktive Klassifizierung.

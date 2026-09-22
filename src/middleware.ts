@@ -23,4 +23,4 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
-export const config = { matcher: ["/", "/bereich/:path*"] };
+export const config = { matcher: ["/", "/bereich/:path*", "/api/workspace/:path*"] };
