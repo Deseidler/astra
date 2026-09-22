@@ -20,7 +20,7 @@ Weitere Produktarbeit: Dokumentenimport, Malwareprüfung, unveränderliche Origi
 
 ## Betrieb
 
-Kein Deployment und keine Änderung einer entfernten Datenbank. Vor einem Produktivbetrieb Migrationen anwenden, Selbstregistrierung deaktivieren, Benutzer gezielt einladen und die weiteren Sicherheitskontrollen der Übergabe umsetzen. Die derzeitige Anwendung ist eine Grundlage mit lesendem Zugriff, keine vollständig implementierte Dokumentenplattform.
+Der geprüfte Stand wurde nach ausdrücklicher Freigabe auf das öffentliche GitHub-Repository `Deseidler/astra`, Branch `main`, gepusht. Vercel hat das Projekt `velmora` erfolgreich bereitgestellt: https://velmora-mauve.vercel.app. Die Cloud-Anmeldung bleibt bis zur Auswahl und Einrichtung des Supabase-Zielprojekts deaktiviert. Noch keine Änderung einer entfernten Datenbank. Vor einem Produktivbetrieb Migrationen anwenden, Selbstregistrierung deaktivieren, Benutzer gezielt einladen und die weiteren Sicherheitskontrollen der Übergabe umsetzen. Die derzeitige Anwendung ist eine Grundlage mit lesendem Zugriff, keine vollständig implementierte Dokumentenplattform.
 
 ## Technische Referenz
 
