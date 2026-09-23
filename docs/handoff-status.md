@@ -5,7 +5,7 @@ Quelle: VELMORA_Codex_Handoff_2026-09-22.zip. Alle 22 mitgelieferten SHA-256-Pr�
 ## Funktionsumfang
 
 - Anmeldung mit bestehendem Supabase-Konto, serverseitige Identitätsprüfung und Abmeldung; keine Registrierungsoberfläche.
-- Familienprofile mit Rolle, Stammdaten, Steuer-/Versicherungskennzeichen und selbst ergänzbaren Feldern. Kennzeichen sind in der Übersicht verborgen.
+- Familienprofile mit Rolle, Stammdaten, Steuer-/Versicherungskennzeichen und selbst ergänzbaren Feldern. Kennzeichen sind im angemeldeten Familienprofil direkt sichtbar.
 - Eigene Themenkacheln je Familienprofil; Zuordnung über Dropdowns.
 - Private Originalablage für PDF/JPEG/PNG bis 3 MB. Prüfung der Dateisignatur, SHA-256-Duplikaterkennung und chronologische Sortierung nach Dokumentdatum, ersatzweise Eingang. Eine Signaturprüfung ersetzt keinen Malware-Scan.
 - Akten, Aufgaben, Fristen und manuelle Zuordnung. Die Originaldatei bleibt unverändert; Metadaten lassen sich bearbeiten.
@@ -22,11 +22,25 @@ Die vier ausdrücklich gewünschten Familienprofile mit jeweils sechs Themenkach
 
 Vercel-Projekt `velmora`: https://velmora-mauve.vercel.app. Supabase-Projekt VELMORA in ITCloud ist eingerichtet; Tabellen, private Ablage, Eigentümerregeln und das bestehende Benutzerkonto sind vorbereitet. Die Cloud-Konfiguration ist in Vercel Production hinterlegt.
 
-Die hier dokumentierte Erweiterung ist lokal geprüft, aber noch nicht erneut produktiv bereitgestellt. Ein vorheriger Vercel-Bereitstellungsversuch wurde durch die automatische Freigabeprüfung wegen eines Nutzungslimits abgewiesen. Der erneute Versuch und der Online-Login-Test stehen aus. Bis dahin zeigt die öffentliche Adresse den älteren Stand.
+Der bisherige Stand wurde auf GitHub `main` veröffentlicht und erfolgreich auf Vercel bereitgestellt. Der Online-Login und das Laden der vier Familienprofile mit 24 Themenkacheln wurden geprüft.
+
+## Überarbeitung vom 23.09.2026
+
+- Forderungsdiagramm mit Cent-genauen Summen für offen/erledigt; Beträge lassen sich bei Dokumenten oder Aufgaben erfassen. Abhaken aktualisiert die Summen. Aufgaben sind auch direkt auf der Übersicht abhakbar.
+- Persönliche Angaben stehen direkt unter dem Familiennamen und sind auf ausdrücklichen Wunsch sichtbar. Quellenhinweise bleiben im Bearbeitungsdialog erhalten, erscheinen aber nicht auf der Profilübersicht.
+- Eigene Themenbereiche sind frei eingebbar; vorhandene Werte werden als Vorschläge angeboten.
+- Kamera-Eingabe für Mobilgeräte über `capture=environment`; Fotos werden als Dokument hochgeladen. Der Browser entscheidet, ob Kamera oder Dateiauswahl angeboten wird. Kein Beschnitt, keine Perspektivkorrektur und noch keine OCR. Physische Handy-Kamera nicht im Desktop-Browsertest geprüft.
+- Briefauswahl übernimmt Name und eigene Anschrift. Fehlt diese, wird die vorhandene Anschrift aus dem Vaterprofil als sichtbar gekennzeichneter, zu prüfender Vorschlag eingesetzt. Keine dauerhafte Überschreibung der Personendaten.
+- Bis zu fünf echte PDF-/Bildanhänge (zusammen 3 MB) können ausgewählt oder direkt hochgeladen und als Seiten an die Brief-PDF angefügt werden. Brieftext ist kopierbar. Anlagenverzeichnis allein fügt weiterhin keine Datei hinzu.
+- Dokumente erhalten eine unveränderliche numerische Kennung. Nummern stammen aus einer Datenbanksequenz, können Lücken enthalten und sind keine Buchhaltungs-Belegnummern. Anzeige und Download verwenden Dokumentdatum, Kennung und Titel. Ohne Dokumentdatum wird `Datum-offen` verwendet. Originaldateien bleiben unverändert.
+- Suchhilfe unten rechts durchsucht gespeicherte Titel, Personen, Kategorien, Notizen und Aktenzeichen. Sie arbeitet ohne KI; Bilder/PDF-Inhalte werden noch nicht durchsucht. Die Suche umfasst die aktuell geladenen Einträge (maximal 1.000).
+- Vom Dokument aus lässt sich eine Antwortvorlage zur manuellen Ergänzung im E-Mail-Dialog öffnen. Keine automatische Inhaltsauswertung oder unbeaufsichtigte Antwort. Versand weiterhin über exportierte E-Mail-Datei.
+- Verlauf nach Tagen zusammengefasst; mehr Roségold in Flächen, Navigation und Schaltflächen.
+- Zusätzlich geprüft: Geldsummen und Erledigt-Status, Suche, Dokumentnummern, freie Themen, echte PDF-Anhänge, Ablehnung unbekannter Anhänge, Absenderübernahme und mobile Darstellung ohne horizontale Überbreite.
 
 ## Offen
 
-Auf ausdrücklichen Wunsch folgt die KI-Schlüssel-Einrichtung später. Deshalb keine OCR, automatische Personenzuordnung, belegte Datenextraktion oder automatisch abgeleitete Fristen. Die Agentenübersicht unterscheidet verfügbare manuelle Funktionen von späteren KI-Funktionen.
+Die sichere KI-Schlüsseleinrichtung wurde auf Wunsch erneut geöffnet; die Auswahl im Einrichtungsfenster steht noch aus. Deshalb keine OCR, automatische Personenzuordnung, belegte Datenextraktion oder automatisch abgeleitete Fristen. Die Agentenübersicht unterscheidet verfügbare manuelle Funktionen von späteren KI-Funktionen.
 
 E-Mail-Anbieter-Anmeldung, Posteingangssynchronisierung und direkter Versand sind noch nicht eingerichtet. Weitere ausstehende Betriebsschritte: Cloud-Selbstregistrierung deaktivieren/verifizieren, Malwareprüfung, Lösch-/Aufbewahrungskonzept, MFA, getestete Backups und vollständige Zugriffsprotokollierung. Der aktuelle Verlauf umfasst Änderungen und Exporte über die Anwendung, nicht jeden Datenbank-Lesezugriff. Familienprofile sind keine eigenständigen Benutzerkonten. Listen laden maximal 1.000 Einträge und 100 Ereignisse.
 

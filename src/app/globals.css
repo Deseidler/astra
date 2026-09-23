@@ -1649,3 +1649,219 @@ input[type="checkbox"] {
     padding: 20px;
   }
 }
+/* Roségold and everyday workflows */
+:root {
+  --rose: #d19b95;
+  --gold-light: #e4b9a5;
+}
+.gold-button,
+.primary-button {
+  background: linear-gradient(115deg, #ebc69c, #d89e9a);
+  border-color: #edc8b4;
+}
+.welcome-banner {
+  background:
+    radial-gradient(ellipse at 30% 30%, #ad696925, transparent 75%), #171111;
+}
+.family-card {
+  border-color: #ba827c66;
+}
+.panel {
+  background: linear-gradient(125deg, #1d1717, #151313);
+}
+.nav-link[aria-current="page"] {
+  background: #bb85851c;
+  border-color: #ca969653;
+  color: #edc4b7;
+}
+.prominent-details {
+  margin-bottom: 32px;
+  border-color: #bd898566;
+}
+.prominent-details > div {
+  padding: 12px;
+  border: 1px solid #c9909025;
+  border-radius: 9px;
+  background: #bd898508;
+}
+.prominent-details strong {
+  font-size: 15px;
+  color: #f0d2c6;
+}
+.finance-panel {
+  margin: 0 0 30px;
+}
+.finance-summary {
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  margin: 25px 0;
+}
+.finance-summary p {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  align-items: center;
+  gap: 3px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.finance-summary strong {
+  grid-column: 2;
+  font:
+    26px Georgia,
+    serif;
+  color: var(--foreground);
+}
+.finance-ring {
+  width: 130px;
+  height: 130px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  padding: 12px;
+}
+.finance-ring > span {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #191414;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font:
+    27px Georgia,
+    serif;
+  color: #edc4b7;
+}
+.finance-ring small {
+  font: 11px Arial;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #685044;
+}
+.legend-dot.rose {
+  background: #dcaeaa;
+}
+.camera-button {
+  margin-bottom: 22px;
+  border-color: var(--rose);
+  color: #e8beb1;
+}
+.attachment-picker {
+  margin: 25px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.attachment-picker .check-field {
+  margin-top: 12px;
+}
+.search-assistant {
+  position: fixed;
+  bottom: 22px;
+  right: 25px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+.chat-toggle {
+  border: 1px solid #e5b8ab;
+  background: linear-gradient(120deg, #cba077, #b88086);
+  color: #211417;
+  border-radius: 30px;
+  padding: 13px 20px;
+  box-shadow: 0 8px 30px #0008;
+  font-size: 13px;
+}
+.search-chat {
+  width: min(370px, calc(100vw - 32px));
+  max-height: 70svh;
+  overflow: auto;
+  border-color: #c99090;
+}
+.search-chat form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 20px;
+}
+.search-chat form .field {
+  min-width: 0;
+  flex: 1;
+}
+.search-chat .gold-button {
+  padding: 10px;
+}
+.chat-question {
+  background: #c9909020;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 13px;
+}
+.search-result {
+  display: block;
+  text-align: left;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--foreground);
+  padding: 12px 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.search-result span {
+  display: block;
+  color: var(--gold-light);
+  font-size: 11px;
+}
+.history-day {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+.history-day summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  cursor: pointer;
+}
+.history-day summary span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.history-day p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.workspace-footer {
+  padding-bottom: 60px;
+}
+@media (max-width: 760px) {
+  .search-assistant {
+    right: 16px;
+    bottom: 16px;
+  }
+  .finance-summary {
+    gap: 20px;
+  }
+  .finance-ring {
+    width: 105px;
+    height: 105px;
+  }
+  .prominent-details {
+    grid-template-columns: 1fr;
+  }
+  .finance-panel .task-row {
+    flex-wrap: wrap;
+  }
+  .history-day summary {
+    flex-direction: column;
+  }
+}

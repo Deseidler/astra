@@ -51,7 +51,12 @@ export const caseSchema = z.object({
   notes: text(4000),
   status: z.enum(["open", "closed"]),
 });
+const moneyFields = {
+  amountCents: z.number().int().min(0).max(100000000000).default(0),
+  settled: z.boolean().default(false),
+};
 export const taskSchema = z.object({
+  ...moneyFields,
   due: date,
   caseId: ref,
   profileId: ref,
@@ -73,6 +78,7 @@ export const letterSchema = z.object({
   body: text(20000).min(1),
   closing: text(200).min(1),
   attachments: text(2000),
+  attachmentIds: z.array(z.uuid()).max(5).default([]),
   status: z.enum(["draft", "approved"]),
 });
 export const emailSchema = z.object({
@@ -89,6 +95,8 @@ export const connectionSchema = z.object({
   notes: text(1000),
 });
 export const documentSchema = z.object({
+  ...moneyFields,
+  due: date.default(""),
   category: text(80).min(1),
   caseId: ref,
   profileId: ref,
@@ -126,6 +134,7 @@ export type Item = {
   version: number;
   created_at: string;
   updated_at: string;
+  document_number?: number | null;
 };
 export type WorkspaceEvent = {
   id: number;

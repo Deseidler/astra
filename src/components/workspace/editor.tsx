@@ -9,7 +9,8 @@ import {
 type Field = {
   key: string;
   label: string;
-  type?: "textarea" | "date" | "email" | "checkbox" | "select" | "secret";
+  type?:
+    "textarea" | "date" | "email" | "checkbox" | "select" | "secret" | "money";
   options?: string[];
   source?: Kind;
   required?: boolean;
@@ -77,8 +78,7 @@ const fields: Record<Kind, Field[]> = {
     {
       key: "category",
       label: "Themenbereich",
-      type: "select",
-      options: [...categories],
+      hint: "Vorhandenen Bereich wählen oder einen eigenen Namen eingeben.",
     },
     { key: "notes", label: "Beschreibung", type: "textarea" },
   ],
@@ -88,8 +88,7 @@ const fields: Record<Kind, Field[]> = {
     {
       key: "category",
       label: "Bereich",
-      type: "select",
-      options: [...categories],
+      hint: "Vorhandenen Bereich wählen oder einen eigenen Namen eingeben.",
     },
     { key: "reference", label: "Aktenzeichen / Kundennummer" },
     {
@@ -101,6 +100,11 @@ const fields: Record<Kind, Field[]> = {
     { key: "notes", label: "Notizen", type: "textarea" },
   ],
   task: [
+    {
+      key: "amountCents",
+      label: "Forderung in Euro (optional)",
+      type: "money",
+    },
     profile,
     matter,
     { key: "due", label: "Fällig am", type: "date" },
@@ -144,7 +148,7 @@ const fields: Record<Kind, Field[]> = {
       key: "attachments",
       label: "Anlagenverzeichnis",
       type: "textarea",
-      hint: "Hier aufgeführte Anlagen werden nicht automatisch beigefügt.",
+      hint: "Zusätzliche Hinweise zu Anlagen. Dateien unten auswählen.",
     },
   ],
   email: [
@@ -169,14 +173,20 @@ const fields: Record<Kind, Field[]> = {
     },
   ],
   document: [
+    {
+      key: "amountCents",
+      label: "Offene Forderung in Euro (optional)",
+      type: "money",
+    },
+    { key: "settled", label: "Forderung erledigt / bezahlt", type: "checkbox" },
+    { key: "due", label: "Zahlungsfrist", type: "date" },
     profile,
     { key: "topicId", label: "Themenkachel", type: "select", source: "topic" },
     matter,
     {
       key: "category",
       label: "Bereich",
-      type: "select",
-      options: [...categories],
+      hint: "Vorhandenen Bereich wählen oder einen eigenen Namen eingeben.",
     },
     {
       key: "date",
@@ -201,7 +211,7 @@ export const labels: Record<string, string> = {
   review: "Zu prüfen",
   filed: "Eingeordnet",
   archived: "Archiviert",
-  draft: "Entwurf",
+  draft: "Entwurf · prüfen",
   approved: "Freigegeben",
   profile: "Familienprofil",
   topic: "Themenkachel",
@@ -228,7 +238,9 @@ export function Editor({
   onSaved: () => Promise<void>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [title, setTitle] = useState(item?.title || "");
+  const [title, setTitle] = useState(
+    item?.title || String(defaults?.subject || ""),
+  );
   const [data, setData] = useState<Record<string, unknown>>(() => ({
     ...defaultData(kind),
     ...defaults,
@@ -236,7 +248,10 @@ export function Editor({
   }));
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [showSecrets, setShowSecrets] = useState(false);
+  const [attachmentDocs, setAttachmentDocs] = useState(
+    items.filter((i) => i.kind === "document"),
+  );
+  const [showSecrets, setShowSecrets] = useState(true);
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
@@ -251,7 +266,12 @@ export function Editor({
           const member = items.find((i) => i.id === value);
           if (member) {
             next.sender = member.data.name || member.title;
-            next.senderAddress = member.data.address || "";
+            next.senderAddress =
+              member.data.address ||
+              items.find(
+                (i) => i.kind === "profile" && i.data.relationship === "Vater",
+              )?.data.address ||
+              "";
           }
         }
       }
@@ -333,6 +353,15 @@ export function Editor({
               Freigabe.
             </p>
           ) : null}
+          {kind === "letter" &&
+          data.profileId &&
+          !items.find((i) => i.id === data.profileId)?.data.address ? (
+            <p className="notice">
+              Für diese Person fehlt eine eigene Anschrift. Die vorhandene
+              Familienanschrift wurde als Vorschlag übernommen. Bitte vor dem
+              Speichern prüfen.
+            </p>
+          ) : null}
           {kind !== "profile" && (
             <label className="field full">
               {kind === "letter" || kind === "email"
@@ -353,7 +382,43 @@ export function Editor({
                 key={field.key}
               >
                 {field.type !== "checkbox" && field.label}
-                {field.type === "select" ? (
+                {field.type === "money" ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000000000"
+                    step="0.01"
+                    value={Number(data[field.key] || 0) / 100}
+                    onChange={(e) =>
+                      change(
+                        field.key,
+                        Math.round(Number(e.target.value) * 100),
+                      )
+                    }
+                  />
+                ) : field.key === "category" ? (
+                  <>
+                    <input
+                      list="workspace-categories"
+                      value={String(data.category || "")}
+                      onChange={(e) => change("category", e.target.value)}
+                      required
+                      maxLength={80}
+                    />
+                    <datalist id="workspace-categories">
+                      {Array.from(
+                        new Set([
+                          ...categories,
+                          ...items
+                            .map((i) => String(i.data.category || ""))
+                            .filter(Boolean),
+                        ]),
+                      ).map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </>
+                ) : field.type === "select" ? (
                   <select
                     value={String(data[field.key] || "")}
                     onChange={(e) => change(field.key, e.target.value)}
@@ -417,6 +482,104 @@ export function Editor({
               </label>
             ))}
           </div>
+          {kind === "letter" && (
+            <section className="attachment-picker">
+              <h3>Anhänge aus Ihren Dokumenten</h3>
+              <label className="field">
+                Neuen Anhang hochladen
+                <input
+                  type="file"
+                  accept="application/pdf,image/png,image/jpeg"
+                  disabled={pending}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setPending(true);
+                    setError("");
+                    try {
+                      const form = new FormData();
+                      form.set("file", file);
+                      form.set("profileId", String(data.profileId || ""));
+                      const response = await fetch("/api/workspace/upload", {
+                        method: "POST",
+                        body: form,
+                      });
+                      const result = await response.json();
+                      if (!response.ok) throw new Error(result.error);
+                      setAttachmentDocs((d) => [...d, result.item]);
+                      change("attachmentIds", [
+                        ...((data.attachmentIds || []) as string[]),
+                        result.item.id,
+                      ]);
+                    } catch (error) {
+                      setError(
+                        error instanceof Error
+                          ? error.message
+                          : "Upload fehlgeschlagen.",
+                      );
+                    } finally {
+                      setPending(false);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+              </label>
+              <p className="muted">
+                Bis zu fünf PDFs oder Bilder (zusammen höchstens 3 MB) werden
+                als weitere Seiten beigefügt.
+              </p>
+              {attachmentDocs.map((doc) => (
+                <label className="check-field" key={doc.id}>
+                  <input
+                    type="checkbox"
+                    checked={((data.attachmentIds || []) as string[]).includes(
+                      doc.id,
+                    )}
+                    onChange={(e) => {
+                      const ids = (data.attachmentIds || []) as string[];
+                      change(
+                        "attachmentIds",
+                        e.target.checked
+                          ? [...ids, doc.id]
+                          : ids.filter((id) => id !== doc.id),
+                      );
+                    }}
+                  />
+                  {doc.title}
+                </label>
+              ))}
+              {!attachmentDocs.length && (
+                <p>Noch keine Dokumente hochgeladen.</p>
+              )}
+            </section>
+          )}
+          {(kind === "letter" || kind === "email") && (
+            <button
+              type="button"
+              className="quiet-button"
+              onClick={() =>
+                navigator.clipboard
+                  .writeText(
+                    [
+                      title,
+                      data.salutation,
+                      data.body,
+                      data.closing,
+                      data.sender,
+                    ]
+                      .filter(Boolean)
+                      .join("\n\n"),
+                  )
+                  .catch(() =>
+                    setError(
+                      "Kopieren nicht möglich. Bitte markieren Sie den Text im Eingabefeld.",
+                    ),
+                  )
+              }
+            >
+              Text kopieren
+            </button>
+          )}
           {kind === "profile" && (
             <>
               <button

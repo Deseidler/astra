@@ -1,3 +1,6 @@
+import { appendAttachments } from "@/lib/workspace/attachments";
+import { documentLabel } from "@/lib/workspace/presentation";
+import type { Item } from "@/lib/workspace/model";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -49,6 +52,42 @@ export async function GET(
       const data = letterSchema.parse(item.data);
       try {
         bytes = await renderLetter(item.title, data);
+        if (data.attachmentIds.length) {
+          const { data: records, error: attachmentError } = await db
+            .from("workspace_items")
+            .select("*")
+            .eq("owner_id", user.id)
+            .eq("kind", "document")
+            .in("id", data.attachmentIds);
+          if (
+            attachmentError ||
+            records?.length !== new Set(data.attachmentIds).size
+          )
+            throw new Error("Ein Anhang ist nicht mehr verfügbar.");
+          const attachments = [];
+          let total = 0;
+          for (const id of data.attachmentIds) {
+            const record = records.find((r) => r.id === id)!;
+            const original = documentSchema.parse(record.data).original;
+            if (!original.path.startsWith(user.id + "/"))
+              throw new Error("Kein Zugriff auf den Anhang.");
+            total += original.size;
+            if (total > 3145728)
+              throw new Error(
+                "Anhänge dürfen zusammen höchstens 3 MB groß sein.",
+              );
+            const { data: file, error: downloadError } = await db.storage
+              .from("velmora-originals")
+              .download(original.path);
+            if (downloadError || !file)
+              throw new Error("Der Anhang konnte nicht geladen werden.");
+            attachments.push({
+              bytes: new Uint8Array(await file.arrayBuffer()),
+              mime: original.mime,
+            });
+          }
+          bytes = await appendAttachments(bytes, attachments);
+        }
       } catch (e) {
         throw new HttpError(
           400,
@@ -99,7 +138,14 @@ export async function GET(
       event_action: event,
     });
     if (auditError) throw auditError;
-    const filename = `${String(item.data.date || item.created_at.slice(0, 10))}_${item.title.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 90)}.${extension}`;
+    const filename =
+      item.kind === "document"
+        ? documentLabel(item as Item)
+            .replace(/[^a-zA-Z0-9_-]/g, "_")
+            .slice(0, 170) +
+          "." +
+          extension
+        : `${String(item.data.date || item.created_at.slice(0, 10))}_${item.title.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 90)}.${extension}`;
     return new NextResponse(Buffer.from(bytes), {
       headers: {
         "Content-Type": mime,

@@ -1,5 +1,7 @@
 "use client";
 import Image from "next/image";
+import { Finance, PersonalDetails, SearchChat, CompactHistory } from "./extras";
+import { documentLabel } from "@/lib/workspace/presentation";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/auth-actions";
@@ -39,7 +41,7 @@ const agents = [
     "Scan & Texterkennung",
     "OCR_AGENT",
     "Text, Seiten und Datumsangaben aus Fotos und Scans erkennen.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "03",
@@ -53,35 +55,35 @@ const agents = [
     "Behörden & Leistungen",
     "AUTHORITY_AGENT",
     "Bescheide, Anträge und behördliche Fristen vorbereiten.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "05",
     "Gesundheit & Pflege",
     "MEDICAL_CARE_AGENT",
     "Medizinische Unterlagen und Pflegevorgänge mit Quellenbezug ordnen.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "06",
     "Wohnen & Verträge",
     "HOUSING_AGENT",
     "Miete, Nebenkosten und Korrespondenz zu einem Vorgang zusammenführen.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "07",
     "Finanzen & Insolvenz",
     "INSOLVENCY_AGENT",
     "Finanzielle Vorgänge nach Person, Datum und Aktenzeichen trennen.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "08",
     "Geschäftliche Anliegen",
     "BUSINESS_AGENT",
     "Geschäftliche Unterlagen getrennt von Familienangelegenheiten einordnen.",
-    "KI folgt später",
+    "Schlüssel fehlt",
   ],
   [
     "09",
@@ -132,6 +134,7 @@ export function Workspace({
   const [approval, setApproval] = useState<Item | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   const current = sections.find((x) => x.id === view)!;
   const profiles = items.filter((x) => x.kind === "profile");
   const member = profiles.find((x) => x.id === selectedProfile);
@@ -281,7 +284,9 @@ export function Workspace({
           className="record-main"
           onClick={() => setEditing({ kind: item.kind, item })}
         >
-          <strong>{item.title}</strong>
+          <strong>
+            {item.kind === "document" ? documentLabel(item) : item.title}
+          </strong>
           <span>
             {person?.title || "Nicht zugeordnet"} ·{" "}
             {item.kind === "document"
@@ -297,13 +302,32 @@ export function Workspace({
         </span>
         <div className="row-actions">
           {item.kind === "document" ? (
-            <button
-              className="text-button"
-              disabled={busy}
-              onClick={() => download(item)}
-            >
-              Original
-            </button>
+            <>
+              <button
+                className="text-button"
+                disabled={busy}
+                onClick={() => download(item)}
+              >
+                Original
+              </button>
+              <button
+                className="text-button"
+                onClick={() =>
+                  setEditing({
+                    kind: "email",
+                    defaults: {
+                      profileId: item.data.profileId || "",
+                      caseId: item.data.caseId || "",
+                      subject: `Antwort: ${item.title}`,
+                      body: `Sehr geehrte Damen und Herren,\n\nin Bezug auf Ihr Schreiben „${item.title}“${item.data.date ? ` vom ${String(item.data.date).split("-").reverse().join(".")}` : ""}:\n\n[Bitte Antwort ergänzen und prüfen.]\n\nMit freundlichen Grüßen`,
+                      to: "",
+                    },
+                  })
+                }
+              >
+                Antwort vorbereiten
+              </button>
+            </>
           ) : (
             <>
               <button
@@ -472,6 +496,23 @@ export function Workspace({
           hidden
           onChange={(e) => upload(e.target.files)}
         />
+        <input
+          ref={cameraInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(e) => upload(e.target.files)}
+        />
+        {(view === "overview" || view === "documents") && (
+          <button
+            className="quiet-button camera-button"
+            disabled={uploading}
+            onClick={() => cameraInput.current?.click()}
+          >
+            ▣ Mit Handy-Kamera aufnehmen
+          </button>
+        )}
         {error && (
           <div role="alert" className="form-message">
             {error}
@@ -540,6 +581,22 @@ export function Workspace({
                 hint="Ein Schritt nach dem anderen"
               />
             </section>
+            <Finance
+              items={items}
+              busy={busy}
+              onEdit={(item) => setEditing({ kind: item.kind, item })}
+              onCreate={() =>
+                create("task", { amountCents: 0, notes: "Forderung" })
+              }
+              onToggle={(item) =>
+                update(item, {
+                  ...item.data,
+                  ...(item.kind === "task"
+                    ? { done: !item.data.done }
+                    : { settled: !item.data.settled }),
+                })
+              }
+            />
             <div className="section-heading">
               <h2>Ihre Familie</h2>
               <Link className="text-link" href="/bereich?view=profiles">
@@ -598,21 +655,28 @@ export function Workspace({
                   )
                   .slice(0, 4)
                   .map((task) => (
-                    <button
-                      key={task.id}
-                      className="next-task"
-                      onClick={() => setEditing({ kind: "task", item: task })}
-                    >
-                      <span className="task-dot" />
-                      <span>
+                    <div className="next-task" key={task.id}>
+                      <input
+                        type="checkbox"
+                        aria-label={`${task.title} erledigt`}
+                        checked={Boolean(task.data.done)}
+                        disabled={busy}
+                        onChange={(e) =>
+                          update(task, { ...task.data, done: e.target.checked })
+                        }
+                      />
+                      <button
+                        className="record-main"
+                        onClick={() => setEditing({ kind: "task", item: task })}
+                      >
                         <strong>{task.title}</strong>
                         <small>
                           {s(task.data.due)
                             ? date(s(task.data.due))
                             : "Ohne Frist"}
                         </small>
-                      </span>
-                    </button>
+                      </button>
+                    </div>
                   ))}
                 {!tasks.some((t) => !t.data.done) &&
                   empty(
@@ -671,12 +735,7 @@ export function Workspace({
                   <span>Dokumente</span>
                 </div>
               </section>
-              {s(member.data.notes) && (
-                <details className="panel source-note">
-                  <summary>Hinweise & Quellen</summary>
-                  <p>{s(member.data.notes)}</p>
-                </details>
-              )}
+              <PersonalDetails member={member} />
               <div className="section-heading">
                 <h2>Themen von {member.title.split(" ")[0]}</h2>
                 <button
@@ -718,39 +777,6 @@ export function Workspace({
                     "Legen Sie zum Beispiel Steuern, Gesundheit oder Kita als eigene Kachel an.",
                     "topic",
                   )}
-              </div>
-              <div className="section-heading">
-                <h2>Persönliche Angaben</h2>
-                <button
-                  className="text-button"
-                  onClick={() => setEditing({ kind: "profile", item: member })}
-                >
-                  Bearbeiten →
-                </button>
-              </div>
-              <div className="panel personal-fields">
-                {[
-                  ["Anschrift", "address"],
-                  ["Telefon", "phone"],
-                  ["E-Mail", "email"],
-                  ["Krankenversicherung", "healthInsurance"],
-                  ["Steuer-ID", "taxId"],
-                  ["Steuernummer", "taxNumber"],
-                  ["Versichertennummer", "insuranceNumber"],
-                  ["Rentenversicherungsnummer", "pensionNumber"],
-                  ["Kindergeldnummer", "childBenefitNumber"],
-                ].map(([label, key]) => (
-                  <div key={key}>
-                    <span>{label}</span>
-                    <strong>
-                      {s(member.data[key])
-                        ? key.includes("Number") || key === "taxId"
-                          ? "•••••• · hinterlegt"
-                          : s(member.data[key])
-                        : "Noch nicht hinterlegt"}
-                    </strong>
-                  </div>
-                ))}
               </div>
             </>
           ))}
@@ -1060,9 +1086,9 @@ export function Workspace({
               <span className="eyebrow">So bleibt alles nachvollziehbar</span>
               <h2>Hochladen → Erkennen → Zuordnen → Prüfen → Ausgeben</h2>
               <p className="muted">
-                Die KI-Anbindung ist bewusst zurückgestellt. Upload, manuelle
-                Zuordnung, Datumssortierung, Brief-PDF und Freigabe sind bereits
-                bedienbar.
+                Die sichere KI-Schlüsseleinrichtung ist noch nicht
+                abgeschlossen. Upload, manuelle Zuordnung, Datumssortierung,
+                Brief-PDF und Freigabe sind bereits bedienbar.
               </p>
             </section>
             <div className="agent-grid">
@@ -1082,40 +1108,7 @@ export function Workspace({
             </div>
           </>
         )}
-        {view === "timeline" && (
-          <section className="panel activity-list">
-            {events.map((event) => (
-              <div className="activity-item" key={event.id}>
-                <span className="activity-dot" />
-                <div>
-                  <strong>{event.title}</strong>
-                  <p>
-                    {(
-                      {
-                        created: "Eintrag angelegt",
-                        updated: "Eintrag geändert",
-                        download: "Original heruntergeladen",
-                        pdf_export: "PDF ausgegeben",
-                        email_export: "E-Mail-Datei ausgegeben",
-                      } as Record<string, string>
-                    )[event.action] || event.action}
-                  </p>
-                  <time>
-                    {new Intl.DateTimeFormat("de-DE", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(new Date(event.created_at))}
-                  </time>
-                </div>
-              </div>
-            ))}
-            {!events.length &&
-              empty(
-                "Ihr Verlauf beginnt hier.",
-                "Gespeicherte Änderungen und Exporte erscheinen in dieser Übersicht.",
-              )}
-          </section>
-        )}
+        {view === "timeline" && <CompactHistory events={events} />}
         {view === "settings" && (
           <div className="settings-grid">
             <section className="panel">
@@ -1138,7 +1131,7 @@ export function Workspace({
                 </div>
                 <div>
                   <dt>Automatisierung</dt>
-                  <dd>KI-Anbindung folgt später</dd>
+                  <dd>KI-Einrichtung noch nicht abgeschlossen</dd>
                 </div>
               </dl>
             </section>
@@ -1176,6 +1169,10 @@ export function Workspace({
           </p>
         )}
       </main>
+      <SearchChat
+        items={items}
+        onOpen={(item) => setEditing({ kind: item.kind, item })}
+      />
       {editing && (
         <Editor
           key={editing.item?.id || editing.kind}

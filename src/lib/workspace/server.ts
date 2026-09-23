@@ -65,6 +65,16 @@ export async function verifyReferences(
   owner: string,
   data: Record<string, unknown>,
 ) {
+  if (Array.isArray(data.attachmentIds) && data.attachmentIds.length) {
+    const { data: attachments, error } = await db
+      .from("workspace_items")
+      .select("id")
+      .eq("owner_id", owner)
+      .eq("kind", "document")
+      .in("id", data.attachmentIds);
+    if (error || attachments?.length !== new Set(data.attachmentIds).size)
+      throw new HttpError(400, "Ein Anhang ist nicht verfügbar.");
+  }
   for (const [field, kind] of [
     ["profileId", "profile"],
     ["caseId", "case"],

@@ -16,9 +16,10 @@ Vorhandene Umgebungsdateien nicht überschreiben. Die Anwendung benötigt keinen
 ## Funktionen
 
 - Persönliche Profile mit eigenen Themenkacheln, Dropdown-Zuordnung und zusätzlichen Stammdatenfeldern.
-- Private PDF-/Bildoriginale, Duplikaterkennung und Datumssortierung.
+- Private PDF-/Bildoriginale, Kamera-Eingabe, Duplikaterkennung, dauerhafte Nummerierung und Datumssortierung.
+- Forderungsdiagramm, Erledigt-Status und Suchhilfe für gespeicherte Einträge.
 - Akten, Aufgaben und Fristen.
-- Briefe mit persönlichem Briefkopf als A4-PDF; E-Mail-Entwürfe und `.eml`-Export nach Freigabe.
+- Briefe mit persönlichem Briefkopf als A4-PDF; echte PDF-/Bildanhänge, E-Mail-Entwürfe und `.eml`-Export nach Freigabe.
 - Eigentümerbezogene Zugriffsregeln, Änderungsverlauf und Schutz gegen veraltete Speicherstände.
 
 KI-Erkennung, Postfachsynchronisierung und direkter Mailversand sind noch nicht angeschlossen. Familienprofile sind persönliche Akten und keine separaten Benutzerzugänge. Siehe [Umsetzungsstand und Betriebsgrenzen](docs/handoff-status.md).
