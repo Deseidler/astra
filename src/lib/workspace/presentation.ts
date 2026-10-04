@@ -4,7 +4,10 @@ export const money = (cents: number) =>
     cents / 100,
   );
 export function documentLabel(item: Item) {
-  return `${item.data.date || "Datum-offen"}_${String(item.document_number || "").padStart(4, "0")}_${item.title.replace(/\.(pdf|png|jpe?g)$/i, "")}`;
+  const date = item.data.date || "Datum-offen";
+  const reference = String(item.document_number || "").padStart(4, "0");
+  const title = item.title.replace(/\.(pdf|png|jpe?g)$/i, "");
+  return `Dokument_${date}_${reference}_${title}`;
 }
 export function financialTotals(items: Item[]) {
   return items
