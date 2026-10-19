@@ -44,7 +44,7 @@ const agents = [
     "Scan & Texterkennung",
     "OCR_AGENT",
     "Text, Seiten und Datumsangaben aus Fotos und Scans erkennen.",
-    "Schlüssel fehlt",
+    "Im Eingangsagenten",
   ],
   [
     "03",
@@ -58,35 +58,35 @@ const agents = [
     "Behörden & Leistungen",
     "AUTHORITY_AGENT",
     "Bescheide, Anträge und behördliche Fristen vorbereiten.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "05",
     "Gesundheit & Pflege",
     "MEDICAL_CARE_AGENT",
     "Medizinische Unterlagen und Pflegevorgänge mit Quellenbezug ordnen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "06",
     "Wohnen & Verträge",
     "HOUSING_AGENT",
     "Miete, Nebenkosten und Korrespondenz zu einem Vorgang zusammenführen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "07",
     "Finanzen & Insolvenz",
     "INSOLVENCY_AGENT",
     "Finanzielle Vorgänge nach Person, Datum und Aktenzeichen trennen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "08",
     "Geschäftliche Anliegen",
     "BUSINESS_AGENT",
     "Geschäftliche Unterlagen getrennt von Familienangelegenheiten einordnen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "09",
@@ -799,8 +799,7 @@ export function Workspace({
                 <h2>Ein Bild genügt für den Anfang.</h2>
                 <p>PDF, JPG oder PNG hier ablegen · bis 3 MB pro Datei</p>
                 <small>
-                  Originale werden gespeichert. Texterkennung und automatische
-                  Personenzuordnung folgen mit der KI-Anbindung.
+                  Originale werden gespeichert. Der Eingangsagent prüft Inhalt, Dokumentdatum, Personenzuordnung und mögliche Forderungen; unklare Angaben bleiben zur Prüfung offen.
                 </small>
               </div>
               <button

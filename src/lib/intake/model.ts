@@ -31,7 +31,7 @@ export const intakeResultSchema = z.object({
 export type IntakeResult = z.infer<typeof intakeResultSchema>;
 export type IntakeJob = {
   id: string; source_key: string; source_kind: "document" | "mail";
-  source_id: string; title: string; status: "queued" | "running" | "done" | "failed" | "paused";
+  source_id: string; title: string; status: "queued" | "running" | "done" | "failed" | "paused" | "skipped";
   source: Record<string, unknown>; result: IntakeResult | null; error: string;
   profile_id: string | null; case_id: string | null; updated_at: string;
 };
@@ -46,7 +46,7 @@ const normalize = (s: string) => s.normalize("NFKC").toLocaleLowerCase("de").rep
 export function resolveAssignment(result: IntakeResult, items: Item[]) {
   const recipient = normalize(result.recipientName);
   const evidence = ` ${normalize(result.recipientEvidence)} `;
-  const profiles = items.filter(i => i.kind === "profile" && normalize(String(i.data.name || i.title)) === recipient && recipient.split(" ").length >= 2 && evidence.includes(` ${recipient} `));
+  const profiles = items.filter(i => i.kind === "profile" && (normalize(String(i.data.name || i.title)) === recipient || normalize(String(i.data.name || i.title)).split(" ").filter((_,index,parts)=>index===0||index===parts.length-1).join(" ") === recipient) && recipient.split(" ").length >= 2 && evidence.includes(` ${recipient} `));
   const profileId = profiles.length === 1 ? profiles[0].id : "";
   const cases = items.filter(i => i.kind === "case" && result.reference && normalize(String(i.data.reference || "")) === normalize(result.reference) && (!i.data.profileId || i.data.profileId === profileId));
   const caseId = profileId && cases.length === 1 ? cases[0].id : "";

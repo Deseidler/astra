@@ -30,3 +30,15 @@ test("risky or unreadable sources cannot produce a purported legally effective r
  assert.match(safeIntakeReply(result),/Unterlagen/);
  assert.doesNotMatch(safeIntakeReply(result),/erkenne.*an|werde.*zahlen|fristwahrend/i);
 });
+
+test("login and password mail never enters AI and urgent claims have priority",async()=>{
+ const {skipIntakeSubject,intakePriority}=await import("../src/lib/intake/routing");
+ for(const subject of ["Reset your password","Für Ihren AOL Account wurde ein App-Passwort generiert","Du bist angemeldet","Your verification code","Prime-Vorteil: 60 Tage Audible gratis erleben","Versandbestätigung für Bestellung"])assert.ok(skipIntakeSubject(subject),subject);
+ assert.equal(skipIntakeSubject("Ihre Rechnung Oktober"),"");
+ assert.equal(skipIntakeSubject("AW: Mandatsanfrage"),"");
+ assert.ok(intakePriority("Mahnbescheid", "mail")>intakePriority("Dein Beleg","mail"));
+});
+test("unambiguous recipient name can omit an optional middle name",()=>{
+ assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler")]).profileId,"dom");
+ assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler"),profile("other","Dominik Peter Seidler")]).profileId,"");
+});

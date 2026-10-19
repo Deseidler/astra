@@ -7,6 +7,7 @@ import { HttpError } from "@/lib/workspace/server";
 import { type Item, documentSchema, defaultData } from "@/lib/workspace/model";
 import { mailRefSchema, mailKey, type MailSummary } from "@/lib/mail/model";
 import { readMessage, listInbox } from "@/lib/mail/aol";
+import { skipIntakeSubject, intakePriority } from "./routing";
 import { boundedAnalysis, type IntakeDb } from "./ai";
 import { intakeResultSchema, intakeTitle, resolveAssignment, claimFingerprint, type IntakeJob } from "./model";
 
@@ -22,14 +23,14 @@ export async function intakeEnabled(db: IntakeDb, owner: string) {
   return !error && data?.enabled === true;
 }
 export async function enqueueDocument(db: IntakeDb, owner: string, item: Item) {
-  const { error } = await db.from("intake_jobs").upsert({ owner_id: owner, source_key: `document:${item.id}:v1`, source_kind: "document", source_id: item.id, title: item.title, source: {} }, { onConflict: "owner_id,source_key", ignoreDuplicates: true });
+  const { error } = await db.from("intake_jobs").upsert({ owner_id: owner, source_key: `document:${item.id}:v1`, source_kind: "document", source_id: item.id, title: item.title, source: {}, priority:100 }, { onConflict: "owner_id,source_key", ignoreDuplicates: true });
   if (error) throw new HttpError(503, "Das Dokument ist gespeichert, konnte aber noch nicht in die Analysewarteschlange aufgenommen werden.");
 }
 export function intakeMailAllowed(mail: MailSummary) {
-  return mail.folder === "inbox" && !["Spam", "Newsletter"].includes(mail.excluded) && !/einmalpasswort|one.time.password|verifizierungscode|verification.code|passwort.*(?:zurücksetzen|reset)|password.reset|anmeldecode/i.test(mail.subject);
+  return mail.folder === "inbox" && !["Spam", "Newsletter"].includes(mail.excluded) && !skipIntakeSubject(mail.subject);
 }
 export async function enqueueMail(db: IntakeDb, owner: string, mails: MailSummary[]) {
-  const rows = mails.filter(intakeMailAllowed).map(m => ({ owner_id: owner, source_key: `mail:${mailKey(m)}:v1`, source_kind: "mail", source_id: mailKey(m), title: m.subject, source: { folder: m.folder, validity: m.validity, uid: m.uid } }));
+  const rows = mails.filter(intakeMailAllowed).map(m => ({ owner_id: owner, source_key: `mail:${mailKey(m)}:v1`, source_kind: "mail", source_id: mailKey(m), title: m.subject, priority:intakePriority(m.subject,"mail"), source: { folder: m.folder, validity: m.validity, uid: m.uid } }));
   if (rows.length) {
     const { error } = await db.from("intake_jobs").upsert(rows, { onConflict: "owner_id,source_key", ignoreDuplicates: true });
     if (error) throw new HttpError(503, "Die E-Mail-Analysewarteschlange konnte nicht gespeichert werden.");
@@ -38,7 +39,7 @@ export async function enqueueMail(db: IntakeDb, owner: string, mails: MailSummar
 export async function enqueueExisting(db: IntakeDb, owner: string, before?: number) {
   const { data, error } = await db.from("workspace_items").select("*").eq("owner_id", owner).eq("kind", "document").limit(1000);
   if (error) throw error;
-  const docs = (data || []).filter(item=>!item.data.intakeSourceKey).map(item=>({owner_id:owner,source_key:`document:${item.id}:v1`,source_kind:"document",source_id:item.id,title:item.title,source:{}}));
+  const docs = (data || []).filter(item=>!item.data.intakeSourceKey).map(item=>({owner_id:owner,source_key:`document:${item.id}:v1`,source_kind:"document",source_id:item.id,title:item.title,source:{},priority:100}));
   if(docs.length){const queued=await db.from("intake_jobs").upsert(docs,{onConflict:"owner_id,source_key",ignoreDuplicates:true});if(queued.error)throw queued.error;}
   // A bounded page per request; the client persists the cursor and continues until all mail is queued.
   const page = await listInbox(owner, before, "inbox");
@@ -58,12 +59,14 @@ async function fileInput(bytes: Uint8Array, mime: string, name: string): Promise
 }
 export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: string) {
   if (!await intakeEnabled(db, owner)) return null;
-  let query = db.from("intake_jobs").select("*").eq("owner_id", owner).eq("status", "queued").order("updated_at").limit(1);
+  let query = db.from("intake_jobs").select("*").eq("owner_id", owner).eq("status", "queued").order("priority",{ascending:false}).order("updated_at").limit(1);
   if (jobId) query = query.eq("id", jobId);
   const { data: rows, error } = await query;
   if (error) throw error;
   const job = rows?.[0] as IntakeJob | undefined;
   if (!job) return null;
+  const skip = job.source_kind === "mail" ? skipIntakeSubject(job.title) : "";
+  if(skip){await db.from("intake_jobs").update({status:"skipped",error:skip,updated_at:new Date().toISOString()}).eq("owner_id",owner).eq("id",job.id).eq("status","queued");return{id:job.id,status:"skipped"};}
   const claimed = await db.from("intake_jobs").update({ status: "running", updated_at: new Date().toISOString() }).eq("owner_id", owner).eq("id", job.id).eq("status", "queued").select().maybeSingle();
   if (claimed.error) throw claimed.error;
   if (!claimed.data) return null;
@@ -110,6 +113,10 @@ export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: stri
     const result = await boundedAnalysis(db, `intake:${job.source_key}`, intakeResultSchema, instructions, input);
     if (!result.dateEvidence) result.documentDate = "";
     const assignment = result.readable ? resolveAssignment(result, items) : { profileId: "", caseId: "", topicId: "" };
+    if (original?.data.profileId || job.profile_id) {
+      assignment.profileId = String(original?.data.profileId || job.profile_id);
+      assignment.caseId = String(original?.data.caseId || job.case_id || assignment.caseId);
+    }
     if (!result.readable) { result.claims = []; result.warnings.push("Unleserlich: keine automatische Finanzübernahme oder Zuordnung."); }
     if (!assignment.profileId) result.warnings.push("Personenzuordnung offen. Bitte Empfänger und Familienprofil prüfen.");
     const title = intakeTitle(result);
@@ -136,6 +143,7 @@ export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: stri
       const fingerprint = createHash("sha256").update(claimFingerprint(job.source_key,index,claim)).digest("hex");
       const inserted = await db.from("financial_claims").upsert({ owner_id:owner, job_id:job.id, fingerprint, title, creditor:claim.creditor, reference:claim.reference, amount_cents:claim.amountCents, currency:claim.currency, direction:claim.direction, due:claim.due || null, evidence:claim.evidence, page:claim.page, status:"review", profile_id:assignment.profileId || null, case_id:assignment.caseId || null }, { onConflict:"owner_id,fingerprint", ignoreDuplicates:true });
       if (inserted.error) throw inserted.error;
+      if(assignment.profileId){const assigned=await db.from("financial_claims").update({profile_id:assignment.profileId,case_id:assignment.caseId||null}).eq("owner_id",owner).eq("fingerprint",fingerprint).is("profile_id",null);if(assigned.error)throw assigned.error;}
     }
     const complete = await db.from("intake_jobs").update({status:"done", title, source, result, profile_id: assignment.profileId || null, case_id:assignment.caseId || null, error:"", updated_at:new Date().toISOString()}).eq("owner_id",owner).eq("id",job.id);
     if (complete.error) throw complete.error;

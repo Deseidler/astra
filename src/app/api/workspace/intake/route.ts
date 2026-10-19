@@ -3,7 +3,7 @@ import { z } from "zod";
 import { apiError, checkOrigin, workspaceAuth, HttpError } from "@/lib/workspace/server";
 import { enqueueExisting, processIntakeJob } from "@/lib/intake/agent";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
 const headers = {"Cache-Control":"private, no-store"};
 export async function GET() {
   try {
@@ -16,7 +16,7 @@ export async function GET() {
       db.from("intake_jobs").select("id",{count:"exact",head:true}).eq("owner_id",user.id).eq("status","queued"),
     ]);
     if ([settings,jobs,claims,usage,queued].some(r=>r.error)) throw new HttpError(503,"Der Eingangsagent ist derzeit nicht erreichbar.");
-    return NextResponse.json({enabled:settings.data?.enabled===true,jobs:jobs.data,claims:claims.data,used:usage.count||0,limit:100,queued:queued.count||0,estimatedUsd:(usage.data||[]).reduce((s,r)=>s+(r.input_tokens*0.4+r.output_tokens*1.6)/1000000,0)}, {headers});
+    return NextResponse.json({enabled:settings.data?.enabled===true,jobs:(jobs.data||[]).map(j=>({...j,source:Object.fromEntries(Object.entries(j.source||{}).filter(([key])=>key!=="text"))})),claims:claims.data,used:usage.count||0,limit:100,queued:queued.count||0,estimatedUsd:(usage.data||[]).reduce((s,r)=>s+(r.input_tokens*0.4+r.output_tokens*1.6)/1000000,0)}, {headers});
   } catch(e){return apiError(e);}
 }
 const actionSchema=z.discriminatedUnion("action",[
@@ -24,6 +24,7 @@ const actionSchema=z.discriminatedUnion("action",[
   z.object({action:z.literal("backfill"),before:z.number().int().min(1).max(4294967295).optional()}),
   z.object({action:z.literal("process"),id:z.uuid().optional()}),
   z.object({action:z.literal("claim"),id:z.uuid(),status:z.enum(["review","open","disputed","paid","duplicate"]),profileId:z.union([z.literal(""),z.uuid()]),caseId:z.union([z.literal(""),z.uuid()])}),
+  z.object({action:z.literal("reapply"),id:z.uuid()}),
   z.object({action:z.literal("assign"),id:z.uuid(),profileId:z.union([z.literal(""),z.uuid()]),caseId:z.union([z.literal(""),z.uuid()])}),
 ]);
 export async function POST(request:Request){
@@ -38,7 +39,15 @@ export async function POST(request:Request){
       return NextResponse.json({ok:true},{headers});
     }
     if(input.action==="backfill")return NextResponse.json(await enqueueExisting(db,user.id,input.before),{headers});
-    if(input.action==="process")return NextResponse.json({processed:await processIntakeJob(db,user.id,input.id)},{headers});
+    if(input.action==="process"){
+      const processed=[];
+      for(let i=0;i<(input.id?1:3);i++){const next=await processIntakeJob(db,user.id,input.id);if(!next)break;processed.push(next);}
+      return NextResponse.json({processed},{headers});
+    }
+    if(input.action==="reapply"){
+      const r=await db.from("intake_jobs").update({status:"queued",error:"",updated_at:new Date().toISOString()}).eq("owner_id",user.id).eq("id",input.id).eq("status","done").not("result","is",null).select("id").maybeSingle();if(r.error||!r.data)throw new HttpError(400,"Nur vorhandene fertige Ergebnisse können erneut zugeordnet werden.");
+      return NextResponse.json({ok:true},{headers});
+    }
     for(const [id,kind] of [[input.profileId,"profile"],[input.caseId,"case"]]){
       if(!id)continue;
       const r=await db.from("workspace_items").select("kind,data").eq("id",id).eq("owner_id",user.id).maybeSingle();
