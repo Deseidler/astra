@@ -64,14 +64,16 @@ const iso = (value: Date | string | undefined) => {
   const date = value ? new Date(value) : null;
   return date && Number.isFinite(date.getTime()) ? date.toISOString() : "";
 };
-function summary(mail: FetchMessageObject, validity: string): MailSummary {
+function summary(mail: FetchMessageObject, validity: string, folder: MailRef["folder"]): MailSummary {
   const from = mail.envelope?.from?.[0];
   return {
+    folder,
     uid: mail.uid,
     validity,
     subject: mail.envelope?.subject || "(Kein Betreff)",
     from: from?.address || "",
     fromName: from?.name || from?.address || "Unbekannt",
+    to: (mail.envelope?.to || []).map((r) => r.address || r.name || "").filter(Boolean).join(", "),
     date: iso(mail.envelope?.date || mail.internalDate),
     answered: mail.flags?.has("\\Answered") || false,
     messageId: /^<[^<>\s]+>$/.test(mail.envelope?.messageId || "")
@@ -85,9 +87,16 @@ function summary(mail: FetchMessageObject, validity: string): MailSummary {
   };
 }
 
-export async function listInbox(userId: string, before?: number) {
+async function folderPath(client: ImapFlow, folder: MailRef["folder"]) {
+  if (folder === "inbox") return "INBOX";
+  const sent = (await client.list()).find((f) => f.specialUse === "\\Sent");
+  if (!sent) throw new HttpError(404, "Der AOL-Ordner Gesendet wurde nicht gefunden.");
+  return sent.path;
+}
+
+export async function listInbox(userId: string, before?: number, folder: MailRef["folder"] = "inbox") {
   return withAol(userId, async (client) => {
-    const box = await client.mailboxOpen("INBOX", { readOnly: true });
+    const box = await client.mailboxOpen(await folderPath(client, folder), { readOnly: true });
     const validity = String(box.uidValidity);
     if (!box.exists || before === 1)
       return { messages: [], next: null, validity };
@@ -118,7 +127,7 @@ export async function listInbox(userId: string, before?: number) {
     );
     return {
       messages: mails
-        .map((m) => summary(m, validity))
+        .map((m) => summary(m, validity, folder))
         .sort((a, b) => b.uid - a.uid),
       next: ids.length > page.length ? Math.min(...page) : null,
       validity,
@@ -131,7 +140,7 @@ export async function readMessage(
   ref: MailRef,
 ): Promise<MailDetail> {
   return withAol(userId, async (client) => {
-    const box = await client.mailboxOpen("INBOX", { readOnly: true });
+    const box = await client.mailboxOpen(await folderPath(client, ref.folder), { readOnly: true });
     if (String(box.uidValidity) !== ref.validity)
       throw new HttpError(
         409,
@@ -167,7 +176,7 @@ export async function readMessage(
       skipImageLinks: true,
     });
     const result: MailDetail = {
-      ...summary({ ...meta, headers: full.headers }, ref.validity),
+      ...summary({ ...meta, headers: full.headers }, ref.validity, ref.folder),
       text: (parsed.text || "").slice(0, 30000),
       replyTo:
         parsed.replyTo?.value[0]?.address ||
@@ -179,6 +188,10 @@ export async function readMessage(
       sentReplies: [],
       historyStatus: "Nicht geprüft",
     };
+    if (ref.folder === "sent") {
+      result.historyStatus = "Diese Nachricht befindet sich im AOL-Ordner Gesendet";
+      return result;
+    }
     // Sent-folder evidence supplements, but never overrules, an Answered flag.
     const sent = (await client.list()).find(
       (folder) => folder.specialUse === "\\Sent",

@@ -35,3 +35,13 @@ Der Nutzer erzeugt das App-Passwort direkt in AOL. Die Verbindung nutzt ausschli
 Der neue lokale OpenAI-Schlüssel wurde sicher gespeichert, aber ein synthetischer API-Verbindungstest meldete `429 credit_balance_exhausted`. Keine privaten E-Mails wurden dabei übermittelt. Für KI-Funktionen muss zunächst API-Guthaben verfügbar sein. Das Vercel-Projekt war über die verbundene Vercel-Verbindung nicht sichtbar, wurde aber über die bereits angemeldete Vercel-CLI im Scope `dominik-seidler` eindeutig als `velmora` mit der bekannten Produktionsdomain gefunden. Diese Änderungen wurden noch nicht produktiv bereitgestellt.
 
 Quellen: [AOL IMAP-Einrichtung](https://help.aol.com/articles/how-do-i-use-other-email-applications-to-send-and-receive-my-aol-mail), [AOL App-Passwörter](https://help.aol.com/articles/create-and-manage-app-password), [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [API-Abrechnung](https://platform.openai.com/settings/organization/billing).
+
+## Ordner und Bearbeitungsstände
+
+Posteingang und Gesendet werden über IMAP ausschließlich gelesen. Gesendet wird über das IMAP-Sonderattribut erkannt; beliebige Ordnerpfade sind nicht erlaubt. Nachrichten werden anhand von Ordner, UIDVALIDITY und UID unterschieden.
+
+Die Tabelle `mail_workflow` speichert nur Öffnungszeit, manuelle Relevanz und Bearbeitungsstand. Eigentümerbezogene RLS schützt alle Zugriffe. Öffnen ändert weder den Bearbeitungsstand noch AOL-Markierungen. Die automatische Relevanz ist eine fehleranfällige Vorauswahl und kann manuell übersteuert werden; ausgeschlossene Kategorien erhalten weiterhin keine KI-Antwort.
+
+Bearbeitungsstände: Neu / unbearbeitet, In Bearbeitung, Entwurf bereit, Beantwortet, Erledigt. Gespeicherte Antwortentwürfe sind über `sourceRef` mit der ursprünglichen Nachricht verknüpft und ergeben automatisch „Entwurf bereit“, sofern kein manueller Stand gesetzt ist. Abbrechen des Editors erzeugt keinen Entwurfstatus. „Beantwortet“ als manueller Stand versendet nichts. AOL-Antwortmarkierungen werden separat ausgewiesen.
+
+Filter gelten für die jeweils geladenen Nachrichten; ältere Nachrichten können nachgeladen werden. Gesendete Nachrichten werden nicht als offene eingegangene Anfragen behandelt.

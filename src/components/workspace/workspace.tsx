@@ -14,6 +14,7 @@ import {
   type WorkspaceEvent,
 } from "@/lib/workspace/model";
 import { Editor, labels } from "./editor";
+import { mailRefSchema } from "@/lib/mail/model";
 import { Mailbox } from "./mailbox";
 const s = (value: unknown) => (typeof value === "string" ? value : "");
 const date = (value: string) =>
@@ -1019,7 +1020,7 @@ export function Workspace({
         )}
         {view === "emails" && (
           <>
-            <Mailbox onDraft={(defaults) => create("email", defaults)} />
+            <Mailbox onDraft={(defaults) => create("email", defaults)} savedDrafts={items.filter(i => i.kind === "email" && i.data.sourceMailbox === "AOL").flatMap(i => { const ref = mailRefSchema.safeParse(i.data.sourceRef); return ref.success ? [ref.data] : []; })} />
             <section className="panel mail-connection">
               <div>
                 <span className="eyebrow">Ihre Postfächer</span>

@@ -140,3 +140,29 @@ test("AI output is bounded and rejected if shape or category is invalid", () => 
     false,
   );
 });
+
+test("mail identity separates folders and UID generations", async () => {
+  const { mailKey } = await import("../src/lib/mail/model");
+  const inbox = mailRefSchema.parse({ uid: 42, validity: "7" });
+  assert.equal(inbox.folder, "inbox");
+  assert.notEqual(mailKey(inbox), mailKey({ ...inbox, folder: "sent" }));
+  assert.notEqual(mailKey(inbox), mailKey({ ...inbox, validity: "8" }));
+  assert.equal(mailRefSchema.safeParse({ ...inbox, folder: "../../private" }).success, false);
+});
+
+test("viewing and relevance never imply completion; persisted drafts and manual decisions determine status", async () => {
+  const { isRelevant, workflowStatus, mailStateSchema } = await import("../src/lib/mail/model");
+  const mail = {
+    folder: "inbox" as const, uid: 1, validity: "1", subject: "Anfrage", from: "a@example.com",
+    fromName: "A", to: "b@example.com", date: "", messageId: "", answered: false, excluded: "",
+  };
+  assert.equal(workflowStatus({ ...mail, openedAt: new Date().toISOString() }), "new");
+  assert.equal(workflowStatus({ ...mail, hasDraft: true }), "draft_ready");
+  assert.equal(workflowStatus({ ...mail, hasDraft: true, answered: true }), "answered");
+  assert.equal(workflowStatus({ ...mail, hasDraft: true, manualStatus: "done" }), "done");
+  assert.equal(workflowStatus({ ...mail, answered: true, manualStatus: "new" }), "new");
+  assert.equal(isRelevant({ ...mail, excluded: "Newsletter" }), false);
+  assert.equal(isRelevant({ ...mail, excluded: "Newsletter", relevance: "relevant" }), true);
+  assert.equal(isRelevant({ ...mail, relevance: "excluded" }), false);
+  assert.equal(mailStateSchema.safeParse({ ...mail, status: "sent_automatically" }).success, false);
+});
