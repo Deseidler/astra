@@ -67,3 +67,11 @@ export function safeIntakeReply(result: IntakeResult) {
   if (!result.responseNeeded || result.legalReview || !result.readable) return "";
   return `Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihre Nachricht${result.reference ? ` zum Aktenzeichen ${result.reference.replace(/[\r\n]/g, " ")}` : ""}.\n\nBitte lassen Sie mir die für die weitere Prüfung erforderlichen Unterlagen sowie eine nachvollziehbare Erläuterung Ihres Anliegens zukommen.\n\nMit freundlichen Grüßen`;
 }
+
+export function enforceLegalReview(result: IntakeResult): IntakeResult {
+  if (/mahnbescheid|vollstreck|klage|gericht|verjähr|inkasso|ordnungswidrig|kostenbescheid|bußgeld|bussgeld|einspruch|rechtsbehelf|widerspruch/i.test(`${result.title} ${result.summary} ${result.reference}`)) {
+    result.legalReview = true;
+    if (!result.warnings.includes("Rechtliche Tragweite und genannte Fristen fachlich prüfen; keine automatisch fristwahrende Erklärung.")) result.warnings.push("Rechtliche Tragweite und genannte Fristen fachlich prüfen; keine automatisch fristwahrende Erklärung.");
+  }
+  return result;
+}

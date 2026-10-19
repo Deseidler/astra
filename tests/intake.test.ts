@@ -42,3 +42,8 @@ test("unambiguous recipient name can omit an optional middle name",()=>{
  assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler")]).profileId,"dom");
  assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler"),profile("other","Dominik Peter Seidler")]).profileId,"");
 });
+
+test("explicit legal notices require review even when the model misses the flag",async()=>{
+ const {enforceLegalReview}=await import("../src/lib/intake/model");
+ for(const title of ["Kostenbescheid Ordnungswidrigkeit","Inkasso Zahlungsaufforderung","Mahnbescheid","Widerspruch gegen Bescheid"]){const guarded=enforceLegalReview({...result,title,warnings:[],legalReview:false});assert.equal(guarded.legalReview,true);assert.equal(safeIntakeReply(guarded),"");}
+});
