@@ -127,7 +127,7 @@ export async function GET(
       const data = emailSchema.parse(item.data);
       if (data.status !== "approved")
         throw new HttpError(400, "Bitte geben Sie die Nachricht zuerst frei.");
-      bytes = Buffer.from(emailDraft(data.to, item.title, data.body));
+      bytes = Buffer.from(emailDraft(data.to, item.title, data.body, undefined, data.sourceMessageId));
       mime = "message/rfc822";
       extension = "eml";
       event = "email_export";

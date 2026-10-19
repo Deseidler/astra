@@ -1865,3 +1865,18 @@ input[type="checkbox"] {
     flex-direction: column;
   }
 }
+
+/* AOL correspondence follows the existing private workspace palette. */
+.aol-panel { margin-bottom: 24px; }
+.aol-layout { display: grid; grid-template-columns: minmax(220px, .85fr) minmax(0, 1.5fr); gap: 24px; margin-top: 18px; }
+.aol-list { min-width: 0; }
+.aol-message { display: flex; flex-direction: column; gap: 7px; width: 100%; text-align: left; color: inherit; background: transparent; border: 1px solid var(--line, #453537); padding: 15px; margin-bottom: 8px; border-radius: 10px; overflow-wrap: anywhere; cursor: pointer; }
+.aol-message[aria-pressed="true"] { border-color: var(--gold, #c8a460); background: #c8a46012; }
+.aol-message small { color: var(--muted, #b7a5a6); }
+.aol-message:focus-visible { outline: 2px solid var(--gold, #c8a460); outline-offset: 3px; }
+.aol-detail { min-width: 0; overflow-wrap: anywhere; }
+.aol-text { font-family: inherit; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; max-height: 540px; overflow-y: auto; padding: 16px; background: #ffffff05; border-radius: 10px; }
+.aol-consent { display: flex; align-items: flex-start; gap: 10px; margin: 22px 0 14px; font-size: .9rem; line-height: 1.6; }
+.aol-consent input { margin-top: 5px; flex-shrink: 0; }
+.aol-analysis { border-top: 1px solid var(--line, #453537); margin-top: 24px; padding-top: 16px; }
+@media (max-width: 1000px) { .aol-layout { grid-template-columns: minmax(0, 1fr); } }

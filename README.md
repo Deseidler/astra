@@ -22,7 +22,7 @@ Vorhandene Umgebungsdateien nicht überschreiben. Die Anwendung benötigt keinen
 - Briefe mit persönlichem Briefkopf als A4-PDF; echte PDF-/Bildanhänge, E-Mail-Entwürfe und `.eml`-Export nach Freigabe.
 - Eigentümerbezogene Zugriffsregeln, Änderungsverlauf und Schutz gegen veraltete Speicherstände.
 
-KI-Erkennung, Postfachsynchronisierung und direkter Mailversand sind noch nicht angeschlossen. Familienprofile sind persönliche Akten und keine separaten Benutzerzugänge. Siehe [Umsetzungsstand und Betriebsgrenzen](docs/handoff-status.md).
+Der E-Mail-Bereich enthält eine serverseitig einzurichtende AOL-Anbindung mit persönlicher Nachrichtenauswahl und optionaler KI-Antwortvorbereitung. Einrichtung, Grenzen und offene Aktivierung siehe [AOL-Korrespondenz](docs/aol-mail.md). Automatische Dokumenterkennung und direkter Mailversand sind noch nicht angeschlossen. Familienprofile sind persönliche Akten und keine separaten Benutzerzugänge. Siehe auch den bisherigen [Umsetzungsstand und Betriebsgrenzen](docs/handoff-status.md).
 
 ## Datenbank und Tests
 

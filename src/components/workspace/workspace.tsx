@@ -14,6 +14,7 @@ import {
   type WorkspaceEvent,
 } from "@/lib/workspace/model";
 import { Editor, labels } from "./editor";
+import { Mailbox } from "./mailbox";
 const s = (value: unknown) => (typeof value === "string" ? value : "");
 const date = (value: string) =>
   value
@@ -1018,14 +1019,16 @@ export function Workspace({
         )}
         {view === "emails" && (
           <>
+            <Mailbox onDraft={(defaults) => create("email", defaults)} />
             <section className="panel mail-connection">
               <div>
                 <span className="eyebrow">Ihre Postfächer</span>
-                <h2>Alles bereit für die Verbindung.</h2>
+                <h2>Weitere Postfachangaben</h2>
                 <p className="muted">
-                  Nachrichten lassen sich schon verfassen und als E-Mail-Datei
-                  exportieren. Empfang, Synchronisation und direkter Versand
-                  benötigen noch die Anmeldung beim Anbieter.
+                  Hier können Sie Angaben zu weiteren Postfächern vorbereiten.
+                  Die AOL-Verbindung und den Posteingang finden Sie oben.
+                  Geprüfte Antworten können Sie weiterhin als E-Mail-Datei
+                  für Ihr Mailprogramm exportieren.
                 </p>
               </div>
               <button

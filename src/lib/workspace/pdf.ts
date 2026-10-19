@@ -203,6 +203,7 @@ export function emailDraft(
   subject: string,
   body: string,
   pdf?: Uint8Array,
+  inReplyTo?: string,
 ) {
   if (/[\r\n]/.test(to) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))
     throw new Error("Ungültige Empfängeradresse.");
@@ -211,7 +212,10 @@ export function emailDraft(
       .toString("base64")
       .match(/.{1,76}/g)
       ?.join("\r\n") || "";
-  const header = `To: ${to}\r\nSubject: =?UTF-8?B?${Buffer.from(subject).toString("base64")}?=\r\nMIME-Version: 1.0\r\nX-Unsent: 1\r\n`;
+  if (inReplyTo && (/[\r\n]/.test(inReplyTo) || !/^<[^<>\s]+>$/.test(inReplyTo)))
+    throw new Error("Ungültiger Nachrichtenbezug.");
+  const reference = inReplyTo ? `In-Reply-To: ${inReplyTo}\r\nReferences: ${inReplyTo}\r\n` : "";
+  const header = `To: ${to}\r\nSubject: =?UTF-8?B?${Buffer.from(subject).toString("base64")}?=\r\n${reference}MIME-Version: 1.0\r\nX-Unsent: 1\r\n`;
   if (!pdf)
     return (
       header +
