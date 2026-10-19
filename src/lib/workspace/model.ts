@@ -116,6 +116,7 @@ export const documentSchema = z.object({
   date,
   status: z.enum(["review", "filed", "archived"]),
   notes: text(2000),
+  intakeSourceKey: z.string().max(200).optional(),
   original: z.object({
     path: text(300).min(1),
     name: text(200).min(1),

@@ -31,7 +31,7 @@ export function Finance({
       <div className="section-heading">
         <div>
           <span className="eyebrow">Finanzen im Blick</span>
-          <h2>Forderungen & Zahlungen</h2>
+          <h2>Forderungen & Zahlungen · manuell erfasst</h2>
         </div>
         <button className="quiet-button" onClick={onCreate}>
           + Forderung

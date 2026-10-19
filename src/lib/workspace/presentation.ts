@@ -7,7 +7,7 @@ export function documentLabel(item: Item) {
   const date = item.data.date || "Datum-offen";
   const reference = String(item.document_number || "").padStart(4, "0");
   const title = item.title.replace(/\.(pdf|png|jpe?g)$/i, "");
-  return `Dokument_${date}_${reference}_${title}`;
+  return `${date}_${title.replace(/^(?:\d{4}-\d{2}-\d{2}|Datum-offen)[_\s-]+/, "") || reference}`;
 }
 export function financialTotals(items: Item[]) {
   return items

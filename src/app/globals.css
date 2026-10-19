@@ -1881,3 +1881,12 @@ input[type="checkbox"] {
 .aol-analysis { border-top: 1px solid var(--line, #453537); margin-top: 24px; padding-top: 16px; }
 @media (max-width: 1000px) { .aol-layout { grid-template-columns: minmax(0, 1fr); } }
 .recovery-card { width: min(100%, 560px); margin: 32px auto; }
+
+.intake-center { margin-bottom: 1.5rem; }
+.intake-center summary { cursor:pointer; padding:.8rem 0; font-weight:600; }
+.intake-jobs {display:grid;gap:.5rem;max-height:24rem;overflow:auto;}
+.intake-jobs button {text-align:left;}
+.intake-record {border:1px solid var(--border, #514439);border-radius:12px;padding:1rem;margin:1rem 0;overflow-wrap:anywhere;}
+.intake-record blockquote {margin: .8rem 0;padding-left:1rem;border-left:2px solid #dcaeaa;}
+.intake-claims {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:1rem;}
+.intake-center select {max-width:100%;}

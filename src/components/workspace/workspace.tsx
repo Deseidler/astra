@@ -15,6 +15,7 @@ import {
 } from "@/lib/workspace/model";
 import { Editor, labels } from "./editor";
 import { mailRefSchema } from "@/lib/mail/model";
+import { IntakeCenter } from "./intake-center";
 import { Mailbox } from "./mailbox";
 const s = (value: unknown) => (typeof value === "string" ? value : "");
 const date = (value: string) =>
@@ -538,6 +539,7 @@ export function Workspace({
             </button>
           </div>
         )}
+        <IntakeCenter items={items} expanded={["overview","documents","agents"].includes(view)} onChanged={refresh} onDraft={(kind,defaults)=>create(kind,defaults)} />
         {view === "overview" && (
           <>
             <section className="welcome-banner">
@@ -1090,9 +1092,7 @@ export function Workspace({
               <span className="eyebrow">So bleibt alles nachvollziehbar</span>
               <h2>Hochladen → Erkennen → Zuordnen → Prüfen → Ausgeben</h2>
               <p className="muted">
-                Die sichere KI-Schlüsseleinrichtung ist noch nicht
-                abgeschlossen. Upload, manuelle Zuordnung, Datumssortierung,
-                Brief-PDF und Freigabe sind bereits bedienbar.
+                Der Eingangsagent oben prüft Dokumente und E-Mails, benennt sie nach Dokumentdatum, schlägt die Zuordnung vor und erfasst Forderungen zur Prüfung. Versand und rechtliche Entscheidungen benötigen Ihre Freigabe.
               </p>
             </section>
             <div className="agent-grid">

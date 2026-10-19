@@ -1,3 +1,6 @@
+import { enqueueDocument, processIntakeJob, intakeEnabled } from "@/lib/intake/agent";
+import type { Item } from "@/lib/workspace/model";
+import { after } from "next/server";
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { documentSchema, defaultData } from "@/lib/workspace/model";
@@ -9,6 +12,7 @@ import {
   workspaceAuth,
   verifyReferences,
 } from "@/lib/workspace/server";
+export const maxDuration = 120;
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
@@ -57,7 +61,12 @@ export async function POST(request: Request) {
       await db.storage.from("velmora-originals").remove([path]);
       throw error;
     }
-    return NextResponse.json({ item }, { status: 201 });
+    let analysisNotice = "";
+    try {
+      await enqueueDocument(db,user.id,item as Item);
+      if(await intakeEnabled(db,user.id)) after(async()=>{ try { await processIntakeJob(db,user.id); } catch { /* Durable queue remains visible. */ } });
+    } catch { analysisNotice = "Original gespeichert. Analysewarteschlange derzeit nicht erreichbar; bitte später erneut prüfen."; }
+    return NextResponse.json({ item, analysisNotice }, { status: 201 });
   } catch (e) {
     return apiError(e);
   }

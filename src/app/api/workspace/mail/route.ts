@@ -1,3 +1,4 @@
+import { enqueueMail, intakeEnabled } from "@/lib/intake/agent";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
       : undefined;
     const folder = z.enum(["inbox", "sent"]).parse(query.get("folder") || "inbox");
     const page = await listInbox(user.id, before, folder);
+    if (folder === "inbox" && await intakeEnabled(db,user.id)) await enqueueMail(db,user.id,page.messages);
     return NextResponse.json({ ...page, messages: await withWorkflow(db, user.id, page.messages) }, { headers });
   } catch (e) {
     return apiError(e);

@@ -22,6 +22,7 @@ export type MailSummary = MailRef & {
   messageId: string;
 };
 export type MailDetail = MailSummary & {
+  analysisFiles?: { name: string; mime: string; base64: string }[];
   text: string;
   replyTo: string;
   attachments: string[];

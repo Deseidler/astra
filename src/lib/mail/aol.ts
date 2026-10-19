@@ -138,6 +138,7 @@ export async function listInbox(userId: string, before?: number, folder: MailRef
 export async function readMessage(
   userId: string,
   ref: MailRef,
+  includeFiles = false,
 ): Promise<MailDetail> {
   return withAol(userId, async (client) => {
     const box = await client.mailboxOpen(await folderPath(client, ref.folder), { readOnly: true });
@@ -185,6 +186,7 @@ export async function readMessage(
       attachments: parsed.attachments.map(
         (a) => a.filename || "Unbenannter Anhang",
       ),
+      ...(includeFiles ? { analysisFiles: parsed.attachments.filter(a => ["application/pdf", "image/png", "image/jpeg"].includes(a.contentType)).map(a => ({ name: a.filename || "Anhang", mime: a.contentType, base64: a.content.toString("base64") })) } : {}),
       sentReplies: [],
       historyStatus: "Nicht geprüft",
     };
