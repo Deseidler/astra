@@ -59,7 +59,7 @@ async function fileInput(bytes: Uint8Array, mime: string, name: string): Promise
 }
 export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: string) {
   if (!await intakeEnabled(db, owner)) return null;
-  let query = db.from("intake_jobs").select("*").eq("owner_id", owner).eq("status", "queued").order("priority",{ascending:false}).order("updated_at").limit(1);
+  let query = db.from("intake_jobs").select("*").eq("owner_id", owner).in("status", ["queued", "paused"]).order("priority",{ascending:false}).order("updated_at").limit(1);
   if (jobId) query = query.eq("id", jobId);
   const { data: rows, error } = await query;
   if (error) throw error;
@@ -67,7 +67,7 @@ export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: stri
   if (!job) return null;
   const skip = job.source_kind === "mail" ? skipIntakeSubject(job.title) : "";
   if(skip){await db.from("intake_jobs").update({status:"skipped",error:skip,updated_at:new Date().toISOString()}).eq("owner_id",owner).eq("id",job.id).eq("status","queued");return{id:job.id,status:"skipped"};}
-  const claimed = await db.from("intake_jobs").update({ status: "running", updated_at: new Date().toISOString() }).eq("owner_id", owner).eq("id", job.id).eq("status", "queued").select().maybeSingle();
+  const claimed = await db.from("intake_jobs").update({ status: "running", updated_at: new Date().toISOString() }).eq("owner_id", owner).eq("id", job.id).eq("status", job.status).select().maybeSingle();
   if (claimed.error) throw claimed.error;
   if (!claimed.data) return null;
   try {
@@ -92,7 +92,7 @@ export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: stri
       source = { ...job.source, from: mail.from, replyTo: mail.replyTo, messageId: mail.messageId, text: mail.text, date: mail.date, attachments: mail.attachments };
       content.push({ type: "input_text", text: JSON.stringify({ from: mail.from, to: mail.to, subject: mail.subject, date: mail.date, text: mail.text, attachments: mail.attachments }) });
       const files = mail.analysisFiles || [];
-      if (files.length > 3) throw new HttpError(413, "Mehr als drei auswertbare Anhänge. Bitte einzeln hochladen und prüfen.");
+      if (files.length > 10) throw new HttpError(413, "Mehr als zehn auswertbare Anhänge. Bitte einzeln hochladen und prüfen.");
       for (const file of files) {
         const bytes = Buffer.from(file.base64,"base64");
         content.push(await fileInput(bytes, file.mime, file.name));
@@ -141,8 +141,12 @@ export async function processIntakeJob(db: IntakeDb, owner: string, jobId?: stri
         continue;
       }
       const fingerprint = createHash("sha256").update(claimFingerprint(job.source_key,index,claim)).digest("hex");
-      const inserted = await db.from("financial_claims").upsert({ owner_id:owner, job_id:job.id, fingerprint, title, creditor:claim.creditor, reference:claim.reference, amount_cents:claim.amountCents, currency:claim.currency, direction:claim.direction, due:claim.due || null, evidence:claim.evidence, page:claim.page, status:"review", profile_id:assignment.profileId || null, case_id:assignment.caseId || null }, { onConflict:"owner_id,fingerprint", ignoreDuplicates:true });
+      const inserted = await db.from("financial_claims").upsert({ owner_id:owner, job_id:job.id, fingerprint, title, creditor:claim.creditor, reference:claim.reference, amount_cents:claim.amountCents, currency:claim.currency, direction:claim.direction, due:claim.due || null, evidence:claim.evidence, evidence_state:claim.state, page:claim.page, status:"review", profile_id:assignment.profileId || null, case_id:assignment.caseId || null }, { onConflict:"owner_id,fingerprint", ignoreDuplicates:true });
       if (inserted.error) throw inserted.error;
+      if(claim.state==="paid_evidence"){
+        const proof=await db.from("financial_claims").update({evidence_state:"paid_evidence",payment_evidence:claim.evidence,payment_job_id:job.id}).eq("owner_id",owner).eq("fingerprint",fingerprint);
+        if(proof.error)throw proof.error;
+      }
       if(assignment.profileId){const assigned=await db.from("financial_claims").update({profile_id:assignment.profileId,case_id:assignment.caseId||null}).eq("owner_id",owner).eq("fingerprint",fingerprint).is("profile_id",null);if(assigned.error)throw assigned.error;}
     }
     const complete = await db.from("intake_jobs").update({status:"done", title, source, result, profile_id: assignment.profileId || null, case_id:assignment.caseId || null, error:"", updated_at:new Date().toISOString()}).eq("owner_id",owner).eq("id",job.id);

@@ -13,7 +13,7 @@ import { analyzeMail } from "@/lib/mail/analyze";
 import { canAccessMailbox, mailRefSchema, mailStateSchema } from "@/lib/mail/model";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 const headers = { "Cache-Control": "private, no-store" };
 export async function GET(request: Request) {
   try {

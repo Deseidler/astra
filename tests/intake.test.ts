@@ -47,3 +47,11 @@ test("explicit legal notices require review even when the model misses the flag"
  const {enforceLegalReview}=await import("../src/lib/intake/model");
  for(const title of ["Kostenbescheid Ordnungswidrigkeit","Inkasso Zahlungsaufforderung","Mahnbescheid","Widerspruch gegen Bescheid"]){const guarded=enforceLegalReview({...result,title,warnings:[],legalReview:false});assert.equal(guarded.legalReview,true);assert.equal(safeIntakeReply(guarded),"");}
 });
+
+test("small inline logos do not displace actual documents in mail intake",async()=>{
+ const {includeIntakeAttachment}=await import("../src/lib/intake/routing");
+ assert.equal(includeIntakeAttachment({contentType:"image/png",contentDisposition:"inline",cid:"logo",size:2000}),false);
+ assert.equal(includeIntakeAttachment({contentType:"application/pdf",contentDisposition:"attachment",size:2000}),true);
+ assert.equal(includeIntakeAttachment({contentType:"image/jpeg",contentDisposition:"inline",cid:"scan",size:90000}),true);
+ assert.equal(includeIntakeAttachment({contentType:"image/jpeg",contentDisposition:"attachment",size:2000}),true);
+});

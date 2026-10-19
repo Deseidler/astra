@@ -40,6 +40,9 @@ export type Claim = {
   amount_cents: number | null; currency: string; direction: "payable" | "receivable" | "unknown";
   due: string | null; evidence: string; page: number | null;
   status: "review" | "open" | "disputed" | "paid" | "duplicate";
+  evidence_state: "demanded" | "paid_evidence" | "uncertain";
+  payment_evidence: string | null;
+  payment_job_id: string | null;
   profile_id: string | null; case_id: string | null;
 };
 const normalize = (s: string) => s.normalize("NFKC").toLocaleLowerCase("de").replace(/[^\p{L}\p{N}]+/gu, " ").trim();

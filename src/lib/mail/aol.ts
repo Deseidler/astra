@@ -2,6 +2,7 @@ import "server-only";
 import { ImapFlow, type FetchMessageObject } from "imapflow";
 import { simpleParser } from "mailparser";
 import { z } from "zod";
+import { includeIntakeAttachment } from "@/lib/intake/routing";
 import { HttpError } from "@/lib/workspace/server";
 import {
   canAccessMailbox,
@@ -186,7 +187,7 @@ export async function readMessage(
       attachments: parsed.attachments.map(
         (a) => a.filename || "Unbenannter Anhang",
       ),
-      ...(includeFiles ? { analysisFiles: parsed.attachments.filter(a => ["application/pdf", "image/png", "image/jpeg"].includes(a.contentType)).map(a => ({ name: a.filename || "Anhang", mime: a.contentType, base64: a.content.toString("base64") })) } : {}),
+      ...(includeFiles ? { analysisFiles: parsed.attachments.filter(includeIntakeAttachment).map(a => ({ name: a.filename || "Anhang", mime: a.contentType, base64: a.content.toString("base64") })) } : {}),
       sentReplies: [],
       historyStatus: "Nicht geprüft",
     };

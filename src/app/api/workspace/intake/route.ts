@@ -13,7 +13,7 @@ export async function GET() {
       db.from("intake_jobs").select("*").eq("owner_id",user.id).order("updated_at",{ascending:false}).limit(200),
       db.from("financial_claims").select("*").eq("owner_id",user.id).order("due",{ascending:true}).limit(1000),
       db.from("ai_reservations").select("id,input_tokens,output_tokens",{count:"exact"}).eq("owner_id",user.id).gte("created_at",new Date().toISOString().slice(0,7)+"-01T00:00:00Z"),
-      db.from("intake_jobs").select("id",{count:"exact",head:true}).eq("owner_id",user.id).eq("status","queued"),
+      db.from("intake_jobs").select("id",{count:"exact",head:true}).eq("owner_id",user.id).in("status",["queued","paused"]),
     ]);
     if ([settings,jobs,claims,usage,queued].some(r=>r.error)) throw new HttpError(503,"Der Eingangsagent ist derzeit nicht erreichbar.");
     return NextResponse.json({enabled:settings.data?.enabled===true,jobs:(jobs.data||[]).map(j=>({...j,source:Object.fromEntries(Object.entries(j.source||{}).filter(([key])=>key!=="text"))})),claims:claims.data,used:usage.count||0,limit:100,queued:queued.count||0,estimatedUsd:(usage.data||[]).reduce((s,r)=>s+(r.input_tokens*0.4+r.output_tokens*1.6)/1000000,0)}, {headers});

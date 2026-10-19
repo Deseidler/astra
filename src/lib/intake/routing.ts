@@ -8,3 +8,9 @@ export function skipIntakeSubject(subject:string) {
 export function intakePriority(subject:string,kind:string) {
   return kind==="document"?100:/mahnbescheid|vollstreck|klage|gericht|frist|forderung|mahnung|zahlungsaufforderung|widerspruch|kostenbescheid|diebstahl|mandatsanfrage/i.test(subject)?90:/rechnung|ratenzahlung|bezahlung nach|kostenübernahme|erstat|zahlung/i.test(subject)?60:30;
 }
+
+export function includeIntakeAttachment(a:{contentType:string;contentDisposition?:string;cid?:string;size:number}) {
+ if(a.contentType==="application/pdf")return true;
+ if(!["image/png","image/jpeg"].includes(a.contentType))return false;
+ return !(a.contentDisposition==="inline"||a.cid)||a.size>30000;
+}
