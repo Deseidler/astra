@@ -47,7 +47,12 @@ export type MailAnalysis = z.infer<typeof analysisSchema>;
 // Conservative first pass: ambiguous correspondence remains visible for review.
 export function exclusionReason(from: string, subject: string, headers = "") {
   if (/^x-spam-(?:flag|status):\s*yes/im.test(headers)) return "Spam";
-  if (/^list-(?:unsubscribe|id):/im.test(headers) || /newsletter/i.test(from))
+  if (
+    /^list-(?:unsubscribe|id):/im.test(headers) || /newsletter/i.test(from) ||
+    /(?:^|[\s<])(?:news|newsletter|mailing|marketing)[.@_-]/i.test(from) ||
+    /\b(?:PAYBACK (?:Service|Coupons)|IKEA Family|Müller - BabyClub|mister\*lady)\b/i.test(from) ||
+    /(?:\d+\s*%|\b(?:Joker-Coupons|Mid Season SALE|Friends Coupon|Zeit zum Nachbestellen)\b|^Nur (?:noch )?(?:HEUTE|bis Samstag):)/i.test(subject)
+  )
     return "Newsletter";
   if (
     /^(?:auto-submitted:\s*(?!no(?:\s|$))\S+|precedence:\s*(?:bulk|list|junk))/im.test(
@@ -56,6 +61,8 @@ export function exclusionReason(from: string, subject: string, headers = "") {
     /(?:^|[<\s])(?:no[-_.]?reply|noreply|do[-_.]?not[-_.]?reply)@/i.test(from)
   )
     return "Automatische Nachricht";
+  if (/^(?:Vielen Dank für (?:deine|Ihre) Bestellung|(?:Deine|Ihre) Bestellung (?:bei|wurde)|Du hast [\d.,]+\s*€.*(?:gesendet|erhalten))/i.test(subject.trim()))
+    return "Rechnung / Beleg / Bestätigung";
   if (
     /^(?:(?:ihre?|deine?)\s+)?(?:(?:telekom|mobilfunk|festnetz)[ -])*(?:rechnung|beleg|zahlungsaufforderung|mahnung|bestellbestätigung|versandbestätigung|zahlungsbestätigung|kontoauszug|quittung|e-?bon)\b/i.test(
       subject.trim(),

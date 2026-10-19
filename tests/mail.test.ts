@@ -166,3 +166,15 @@ test("viewing and relevance never imply completion; persisted drafts and manual 
   assert.equal(isRelevant({ ...mail, relevance: "excluded" }), false);
   assert.equal(mailStateSchema.safeParse({ ...mail, status: "sent_automatically" }).success, false);
 });
+
+test("clear retail campaigns and order confirmations are excluded from relevant correspondence", () => {
+  for (const [sender, subject] of [
+    ["Amazon.de <mail@example.com>", "Zeit zum Nachbestellen?"],
+    ["Müller - BabyClub <mail@example.com>", "20% auf Lebensmittel inkl. Bio- und Kindernahrung"],
+    ["PAYBACK Service <mail@example.com>", "2 Joker-Coupons als Dankeschön"],
+    ["mister*lady <mail@example.com>", "Nur noch HEUTE: Mid Season SALE"],
+    ["IKEA Family <mail@example.com>", "Wenn Kinder wachsen."],
+    ["REWE <mail@example.com>", "Vielen Dank für deine Bestellung"],
+  ]) assert.ok(exclusionReason(sender, subject), subject);
+  assert.equal(exclusionReason("RAe kolb und Kollegen <kanzlei@example.com>", "AW: Mandatsanfrage"), "");
+});

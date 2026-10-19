@@ -80,7 +80,7 @@ function summary(mail: FetchMessageObject, validity: string, folder: MailRef["fo
       ? mail.envelope!.messageId!
       : "",
     excluded: exclusionReason(
-      from?.address || "",
+      `${from?.name || ""} <${from?.address || ""}>`,
       mail.envelope?.subject || "",
       mail.headers?.toString("utf8"),
     ),
