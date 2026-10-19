@@ -1880,3 +1880,4 @@ input[type="checkbox"] {
 .aol-consent input { margin-top: 5px; flex-shrink: 0; }
 .aol-analysis { border-top: 1px solid var(--line, #453537); margin-top: 24px; padding-top: 16px; }
 @media (max-width: 1000px) { .aol-layout { grid-template-columns: minmax(0, 1fr); } }
+.recovery-card { width: min(100%, 560px); margin: 32px auto; }

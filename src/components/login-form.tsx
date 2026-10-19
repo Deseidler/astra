@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { signIn } from "@/app/auth-actions";
+import Link from "next/link";
 
 export function LoginForm({ configured }: { configured: boolean }) {
   const [state, action, pending] = useActionState(signIn, { error: "" });
@@ -61,12 +62,11 @@ export function LoginForm({ configured }: { configured: boolean }) {
       </button>
       <details className="login-help">
         <summary>Hilfe beim Zugang</summary>
-        <p>
-          Nutzen Sie die Zugangsdaten Ihres bestehenden Kontos. Wenn Ihnen der
-          Zugang fehlt oder Sie Ihr Passwort vergessen haben, wenden Sie sich
-          bitte an die Person, die Ihren Zugang verwaltet.
-        </p>
+        <p>Nutzen Sie die Zugangsdaten Ihres bestehenden Velmora-Kontos.</p>
       </details>
+      <Link href="/passwort-vergessen" className="text-button">
+        Passwort vergessen?
+      </Link>
     </form>
   );
 }
