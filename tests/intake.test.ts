@@ -1,0 +1,57 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {resolveAssignment,intakeTitle,claimFingerprint,safeIntakeReply,intakeResultSchema,type IntakeResult} from "../src/lib/intake/model";
+import type {Item} from "../src/lib/workspace/model";
+const result:IntakeResult={title:"Zahlungsaufforderung",documentDate:"2026-10-13",dateEvidence:"13.10.2026",category:"Finanzen & Steuern",recipientName:"Pia Seidler",recipientEvidence:"An Pia Seidler",reference:"AB-123",summary:"Eine Forderung wird erhoben.",readable:true,warnings:[],urgency:"normal",legalReview:false,recommendation:"Unterlagen prüfen.",responseNeeded:true,claims:[]};
+const profile=(id:string,name:string)=>({id,kind:"profile",title:name,data:{name},owner_id:"owner",version:1,created_at:"2026-10-19",updated_at:"2026-10-19"} as Item);
+test("intake naming uses document evidence and never fabricates a date",()=>{
+ assert.equal(intakeTitle(result),"2026-10-13_Zahlungsaufforderung");
+ assert.equal(intakeTitle({...result,dateEvidence:""}),"Datum-offen_Zahlungsaufforderung");
+ assert.equal(intakeTitle({...result,title:"../Zahlung: Frage/Antwort"}).includes("/"),false);
+ assert.equal(intakeResultSchema.safeParse({...result,documentDate:"2026-02-31"}).success,false);
+});
+test("assignment requires unique full recipient name and evidence; children and ambiguous profiles are not guessed",()=>{
+ const items=[profile("pia","Pia Seidler"),profile("dom","Dominik Seidler")];
+ assert.equal(resolveAssignment(result,items).profileId,"pia");
+ assert.equal(resolveAssignment({...result,recipientName:"Pia",recipientEvidence:"Pia"},items).profileId,"");
+ assert.equal(resolveAssignment({...result,recipientEvidence:"Familie Seidler"},items).profileId,"");
+ assert.equal(resolveAssignment(result,[...items,profile("other","Pia Seidler")]).profileId,"");
+});
+test("claim deduplication uses creditor reference currency amount and direction, not merely equal amounts",()=>{
+ const c={creditor:"Beispiel GmbH",reference:"AB-123",amountCents:12500,currency:"EUR",direction:"payable" as const,due:"",evidence:"Bitte zahlen Sie 125,00 EUR",page:1,state:"demanded" as const};
+ assert.equal(claimFingerprint("mail:a",0,c),claimFingerprint("document:b",0,c));
+ assert.notEqual(claimFingerprint("a",0,c),claimFingerprint("a",0,{...c,reference:"AB-124"}));
+ assert.notEqual(claimFingerprint("a",0,{...c,reference:""}),claimFingerprint("b",0,{...c,reference:""}));
+});
+test("risky or unreadable sources cannot produce a purported legally effective reply",()=>{
+ assert.equal(safeIntakeReply({...result,legalReview:true}),"");
+ assert.equal(safeIntakeReply({...result,readable:false}),"");
+ assert.equal(safeIntakeReply({...result,responseNeeded:false}),"");
+ assert.match(safeIntakeReply(result),/Unterlagen/);
+ assert.doesNotMatch(safeIntakeReply(result),/erkenne.*an|werde.*zahlen|fristwahrend/i);
+});
+
+test("login and password mail never enters AI and urgent claims have priority",async()=>{
+ const {skipIntakeSubject,intakePriority}=await import("../src/lib/intake/routing");
+ for(const subject of ["Reset your password","Für Ihren AOL Account wurde ein App-Passwort generiert","Du bist angemeldet","Your verification code","Prime-Vorteil: 60 Tage Audible gratis erleben","Versandbestätigung für Bestellung"])assert.ok(skipIntakeSubject(subject),subject);
+ assert.equal(skipIntakeSubject("Ihre Rechnung Oktober"),"");
+ assert.equal(skipIntakeSubject("AW: Mandatsanfrage"),"");
+ assert.ok(intakePriority("Mahnbescheid", "mail")>intakePriority("Dein Beleg","mail"));
+});
+test("unambiguous recipient name can omit an optional middle name",()=>{
+ assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler")]).profileId,"dom");
+ assert.equal(resolveAssignment({...result,recipientName:"Dominik Seidler",recipientEvidence:"Herrn Dominik Seidler"},[profile("dom","Dominik Marcel Seidler"),profile("other","Dominik Peter Seidler")]).profileId,"");
+});
+
+test("explicit legal notices require review even when the model misses the flag",async()=>{
+ const {enforceLegalReview}=await import("../src/lib/intake/model");
+ for(const title of ["Kostenbescheid Ordnungswidrigkeit","Inkasso Zahlungsaufforderung","Mahnbescheid","Widerspruch gegen Bescheid"]){const guarded=enforceLegalReview({...result,title,warnings:[],legalReview:false});assert.equal(guarded.legalReview,true);assert.equal(safeIntakeReply(guarded),"");}
+});
+
+test("small inline logos do not displace actual documents in mail intake",async()=>{
+ const {includeIntakeAttachment}=await import("../src/lib/intake/routing");
+ assert.equal(includeIntakeAttachment({contentType:"image/png",contentDisposition:"inline",cid:"logo",size:2000}),false);
+ assert.equal(includeIntakeAttachment({contentType:"application/pdf",contentDisposition:"attachment",size:2000}),true);
+ assert.equal(includeIntakeAttachment({contentType:"image/jpeg",contentDisposition:"inline",cid:"scan",size:90000}),true);
+ assert.equal(includeIntakeAttachment({contentType:"image/jpeg",contentDisposition:"attachment",size:2000}),true);
+});

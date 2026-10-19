@@ -15,3 +15,5 @@ npm-debug.log*
 /private-handoff/
 .vercel
 .env*
+
+/outputs/

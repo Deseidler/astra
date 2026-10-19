@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mailRefSchema } from "@/lib/mail/model";
 const text = (max: number) => z.string().trim().max(max);
 const date = z.union([z.literal(""), z.iso.date()]);
 const ref = z.union([z.literal(""), z.uuid()]);
@@ -87,6 +88,17 @@ export const emailSchema = z.object({
   to: z.email(),
   body: text(20000).min(1),
   status: z.enum(["draft", "approved"]),
+  sourceMessageId: z
+    .union([
+      z.literal(""),
+      z
+        .string()
+        .max(998)
+        .regex(/^<[^<>\s]+>$/),
+    ])
+    .optional(),
+  sourceMailbox: z.literal("AOL").optional(),
+  sourceRef: mailRefSchema.optional(),
 });
 export const connectionSchema = z.object({
   provider: z.enum(["AOL", "Google", "Microsoft", "IMAP / SMTP"]),
@@ -104,6 +116,7 @@ export const documentSchema = z.object({
   date,
   status: z.enum(["review", "filed", "archived"]),
   notes: text(2000),
+  intakeSourceKey: z.string().max(200).optional(),
   original: z.object({
     path: text(300).min(1),
     name: text(200).min(1),

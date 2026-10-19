@@ -14,6 +14,9 @@ import {
   type WorkspaceEvent,
 } from "@/lib/workspace/model";
 import { Editor, labels } from "./editor";
+import { mailRefSchema } from "@/lib/mail/model";
+import { IntakeCenter } from "./intake-center";
+import { Mailbox } from "./mailbox";
 const s = (value: unknown) => (typeof value === "string" ? value : "");
 const date = (value: string) =>
   value
@@ -41,7 +44,7 @@ const agents = [
     "Scan & Texterkennung",
     "OCR_AGENT",
     "Text, Seiten und Datumsangaben aus Fotos und Scans erkennen.",
-    "Schlüssel fehlt",
+    "Im Eingangsagenten",
   ],
   [
     "03",
@@ -55,35 +58,35 @@ const agents = [
     "Behörden & Leistungen",
     "AUTHORITY_AGENT",
     "Bescheide, Anträge und behördliche Fristen vorbereiten.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "05",
     "Gesundheit & Pflege",
     "MEDICAL_CARE_AGENT",
     "Medizinische Unterlagen und Pflegevorgänge mit Quellenbezug ordnen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "06",
     "Wohnen & Verträge",
     "HOUSING_AGENT",
     "Miete, Nebenkosten und Korrespondenz zu einem Vorgang zusammenführen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "07",
     "Finanzen & Insolvenz",
     "INSOLVENCY_AGENT",
     "Finanzielle Vorgänge nach Person, Datum und Aktenzeichen trennen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "08",
     "Geschäftliche Anliegen",
     "BUSINESS_AGENT",
     "Geschäftliche Unterlagen getrennt von Familienangelegenheiten einordnen.",
-    "Schlüssel fehlt",
+    "Eigene Fachprüfung offen",
   ],
   [
     "09",
@@ -536,6 +539,7 @@ export function Workspace({
             </button>
           </div>
         )}
+        <IntakeCenter items={items} expanded={["overview","documents","agents"].includes(view)} onChanged={refresh} onDraft={(kind,defaults)=>create(kind,defaults)} />
         {view === "overview" && (
           <>
             <section className="welcome-banner">
@@ -795,8 +799,7 @@ export function Workspace({
                 <h2>Ein Bild genügt für den Anfang.</h2>
                 <p>PDF, JPG oder PNG hier ablegen · bis 3 MB pro Datei</p>
                 <small>
-                  Originale werden gespeichert. Texterkennung und automatische
-                  Personenzuordnung folgen mit der KI-Anbindung.
+                  Originale werden gespeichert. Der Eingangsagent prüft Inhalt, Dokumentdatum, Personenzuordnung und mögliche Forderungen; unklare Angaben bleiben zur Prüfung offen.
                 </small>
               </div>
               <button
@@ -1018,14 +1021,16 @@ export function Workspace({
         )}
         {view === "emails" && (
           <>
+            <Mailbox onDraft={(defaults) => create("email", defaults)} savedDrafts={items.filter(i => i.kind === "email" && i.data.sourceMailbox === "AOL").flatMap(i => { const ref = mailRefSchema.safeParse(i.data.sourceRef); return ref.success ? [ref.data] : []; })} />
             <section className="panel mail-connection">
               <div>
                 <span className="eyebrow">Ihre Postfächer</span>
-                <h2>Alles bereit für die Verbindung.</h2>
+                <h2>Weitere Postfachangaben</h2>
                 <p className="muted">
-                  Nachrichten lassen sich schon verfassen und als E-Mail-Datei
-                  exportieren. Empfang, Synchronisation und direkter Versand
-                  benötigen noch die Anmeldung beim Anbieter.
+                  Hier können Sie Angaben zu weiteren Postfächern vorbereiten.
+                  Die AOL-Verbindung und den Posteingang finden Sie oben.
+                  Geprüfte Antworten können Sie weiterhin als E-Mail-Datei
+                  für Ihr Mailprogramm exportieren.
                 </p>
               </div>
               <button
@@ -1086,9 +1091,7 @@ export function Workspace({
               <span className="eyebrow">So bleibt alles nachvollziehbar</span>
               <h2>Hochladen → Erkennen → Zuordnen → Prüfen → Ausgeben</h2>
               <p className="muted">
-                Die sichere KI-Schlüsseleinrichtung ist noch nicht
-                abgeschlossen. Upload, manuelle Zuordnung, Datumssortierung,
-                Brief-PDF und Freigabe sind bereits bedienbar.
+                Der Eingangsagent oben prüft Dokumente und E-Mails, benennt sie nach Dokumentdatum, schlägt die Zuordnung vor und erfasst Forderungen zur Prüfung. Versand und rechtliche Entscheidungen benötigen Ihre Freigabe.
               </p>
             </section>
             <div className="agent-grid">

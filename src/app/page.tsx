@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/login-form";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ password?: string }>;
+}) {
+  const passwordUpdated = (await searchParams).password === "updated";
   const supabase = await createServerSupabase();
   if (supabase) {
     const {
@@ -53,6 +58,12 @@ export default async function Home() {
           <h2 id="login-heading">Ihr persönlicher Bereich</h2>
           <p className="muted">Melden Sie sich an und kommen Sie an.</p>
           <LoginForm configured={Boolean(supabase)} />
+          {passwordUpdated && (
+            <p className="form-message" role="status">
+              Ihr Passwort wurde geändert. Melden Sie sich mit Ihrem neuen
+              Velmora-Passwort an.
+            </p>
+          )}
           <div className="access-note">
             <span aria-hidden="true">◇</span>
             <p>

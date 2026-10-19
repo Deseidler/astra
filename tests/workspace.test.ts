@@ -98,7 +98,7 @@ test("finance totals only count explicit monetary entries and settlement follows
   assert.equal(searchItems(docs, "Zeig mir Pia Rechnung")[0]?.id, "a");
   assert.equal(
     documentLabel(docs[1]),
-    "Dokument_2026-08-01_0017_Krankenkasse Rechnung",
+    "2026-08-01_Krankenkasse Rechnung",
   );
 });
 test("real PDF attachment pages are appended", async () => {
